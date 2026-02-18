@@ -3,11 +3,13 @@
 // ============================================================
 
 import { useStore } from '../lib/store';
-import { Search, Bell, RefreshCw, Plus } from 'lucide-react';
+import { useTheme } from '../lib/theme';
+import { Search, Bell, RefreshCw, Plus, Sun, Moon } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Header() {
     const { state, dispatch } = useStore();
+    const { theme, toggleTheme } = useTheme();
     const unreadInsights = state.aiInsights.filter(i => !i.is_read).length;
     const [showNotif, setShowNotif] = useState(false);
 
@@ -54,6 +56,14 @@ export default function Header() {
                 >
                     <Plus size={14} />
                     New Task
+                </button>
+
+                <button
+                    className="theme-toggle"
+                    title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                    onClick={toggleTheme}
+                >
+                    {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
                 </button>
 
                 <button className="header-btn" title="Refresh data">

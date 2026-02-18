@@ -36,6 +36,7 @@ export default function KanbanBoard() {
     const [ventureFilter, setVentureFilter] = useState<string>('all');
     const [priorityFilter, setPriorityFilter] = useState<string>('all');
     const [draggedTask, setDraggedTask] = useState<Task | null>(null);
+    const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
 
     const filteredTasks = useMemo(() => {
         let tasks = state.tasks;
@@ -61,6 +62,23 @@ export default function KanbanBoard() {
             updateTask({ ...draggedTask, status: newStatus });
         }
         setDraggedTask(null);
+        setDragOverColumn(null);
+    };
+
+    const handleDragEnter = (e: React.DragEvent, colKey: string) => {
+        e.preventDefault();
+        setDragOverColumn(colKey);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        // Only clear if leaving the column entirely
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        if (
+            e.clientX < rect.left || e.clientX > rect.right ||
+            e.clientY < rect.top || e.clientY > rect.bottom
+        ) {
+            setDragOverColumn(null);
+        }
     };
 
     const getVentureName = (ventureId: string) => {
@@ -126,8 +144,10 @@ export default function KanbanBoard() {
                     return (
                         <div
                             key={col.key}
-                            className="kanban-column"
+                            className={`kanban-column${dragOverColumn === col.key ? ' drag-over' : ''}`}
                             onDragOver={handleDragOver}
+                            onDragEnter={e => handleDragEnter(e, col.key)}
+                            onDragLeave={handleDragLeave}
                             onDrop={e => handleDrop(e, col.key)}
                         >
                             {/* Column Header */}

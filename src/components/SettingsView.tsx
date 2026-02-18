@@ -2,21 +2,37 @@
 // Settings View
 // ============================================================
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '../lib/store';
 import { isSupabaseConfigured } from '../lib/supabase';
+import { validateToken as validateGitHub } from '../lib/github';
+import { validateApiKey as validateOpenAI } from '../lib/openai';
 import {
     Database, Github, Bot, FolderOpen, Save,
-    CheckCircle2, AlertCircle, Trash2, Plus, RefreshCw
+    CheckCircle2, AlertCircle, Trash2, Plus, RefreshCw, Loader
 } from 'lucide-react';
 
 export default function SettingsView() {
     const { state, dispatch, addVenture } = useStore();
     const [githubToken, setGithubToken] = useState('');
     const [openaiKey, setOpenaiKey] = useState('');
+    const [openaiModel, setOpenaiModel] = useState('gpt-4o-mini');
     const [scanInterval, setScanInterval] = useState(15);
     const [showAddVenture, setShowAddVenture] = useState(false);
     const [saved, setSaved] = useState(false);
+    const [testingGithub, setTestingGithub] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [testingOpenai, setTestingOpenai] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [githubUser, setGithubUser] = useState('');
+
+    // Load saved tokens from localStorage on mount
+    useEffect(() => {
+        const savedGH = localStorage.getItem('vcc-github-token');
+        const savedOAI = localStorage.getItem('vcc-openai-key');
+        const savedModel = localStorage.getItem('vcc-openai-model');
+        if (savedGH) setGithubToken(savedGH);
+        if (savedOAI) setOpenaiKey(savedOAI);
+        if (savedModel) setOpenaiModel(savedModel);
+    }, []);
 
     // New venture form
     const [newVenture, setNewVenture] = useState({
@@ -32,8 +48,35 @@ export default function SettingsView() {
     };
 
     const handleSave = () => {
+        // Save tokens to localStorage
+        if (githubToken) localStorage.setItem('vcc-github-token', githubToken);
+        else localStorage.removeItem('vcc-github-token');
+        if (openaiKey) localStorage.setItem('vcc-openai-key', openaiKey);
+        else localStorage.removeItem('vcc-openai-key');
+        localStorage.setItem('vcc-openai-model', openaiModel);
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
+    };
+
+    const handleTestGitHub = async () => {
+        if (!githubToken) return;
+        setTestingGithub('loading');
+        const result = await validateGitHub(githubToken);
+        if (result.valid) {
+            setTestingGithub('success');
+            setGithubUser(result.username || '');
+        } else {
+            setTestingGithub('error');
+        }
+        setTimeout(() => setTestingGithub('idle'), 3000);
+    };
+
+    const handleTestOpenAI = async () => {
+        if (!openaiKey) return;
+        setTestingOpenai('loading');
+        const result = await validateOpenAI(openaiKey);
+        setTestingOpenai(result.valid ? 'success' : 'error');
+        setTimeout(() => setTestingOpenai('idle'), 3000);
     };
 
     const handleResetData = () => {
@@ -97,6 +140,22 @@ export default function SettingsView() {
                         Generate at github.com/settings/tokens · Needs: repo, read:org scopes
                     </div>
                 </div>
+                <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-3)' }}>
+                    <button
+                        className="btn btn-sm"
+                        style={{ background: 'var(--color-bg-tertiary)', color: 'var(--color-text-secondary)' }}
+                        onClick={handleTestGitHub}
+                        disabled={!githubToken || testingGithub === 'loading'}
+                    >
+                        {testingGithub === 'loading' && <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} />}
+                        {testingGithub === 'success' && <CheckCircle2 size={12} color="var(--color-success)" />}
+                        {testingGithub === 'error' && <AlertCircle size={12} color="var(--color-danger)" />}
+                        {testingGithub === 'idle' && 'Test Connection'}
+                        {testingGithub === 'success' && ` Connected as ${githubUser}`}
+                        {testingGithub === 'error' && ' Invalid token'}
+                        {testingGithub === 'loading' && ' Testing...'}
+                    </button>
+                </div>
             </div>
 
             {/* AI Configuration */}
@@ -119,6 +178,35 @@ export default function SettingsView() {
                     />
                 </div>
                 <div className="form-group">
+                    <label className="form-label">Model</label>
+                    <select
+                        className="form-select"
+                        value={openaiModel}
+                        onChange={e => setOpenaiModel(e.target.value)}
+                        style={{ width: 200 }}
+                    >
+                        <option value="gpt-4o-mini">GPT-4o Mini (fast, cheap)</option>
+                        <option value="gpt-4o">GPT-4o (powerful)</option>
+                        <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                    </select>
+                </div>
+                <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-3)' }}>
+                    <button
+                        className="btn btn-sm"
+                        style={{ background: 'var(--color-bg-tertiary)', color: 'var(--color-text-secondary)' }}
+                        onClick={handleTestOpenAI}
+                        disabled={!openaiKey || testingOpenai === 'loading'}
+                    >
+                        {testingOpenai === 'loading' && <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} />}
+                        {testingOpenai === 'success' && <CheckCircle2 size={12} color="var(--color-success)" />}
+                        {testingOpenai === 'error' && <AlertCircle size={12} color="var(--color-danger)" />}
+                        {testingOpenai === 'idle' && 'Test API Key'}
+                        {testingOpenai === 'success' && ' Key is valid'}
+                        {testingOpenai === 'error' && ' Invalid key'}
+                        {testingOpenai === 'loading' && ' Testing...'}
+                    </button>
+                </div>
+                <div className="form-group" style={{ marginTop: 'var(--space-4)' }}>
                     <label className="form-label">Scan Interval (minutes)</label>
                     <input
                         type="number"
