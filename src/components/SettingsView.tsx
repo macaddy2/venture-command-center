@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { useStore } from '../lib/store';
+import type { VentureTier } from '../lib/types';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { validateToken as validateGitHub } from '../lib/github';
 import { validateApiKey as validateOpenAI } from '../lib/openai';
@@ -295,7 +296,7 @@ export default function SettingsView() {
                             </div>
                             <div className="form-group" style={{ marginBottom: 0 }}>
                                 <label className="form-label">Tier</label>
-                                <select className="form-select" value={newVenture.tier} onChange={e => setNewVenture(p => ({ ...p, tier: e.target.value as any }))}>
+                                <select className="form-select" value={newVenture.tier} onChange={e => setNewVenture(p => ({ ...p, tier: e.target.value as VentureTier }))}>
                                     <option value="Active Build">Active Build</option>
                                     <option value="Incubating">Incubating</option>
                                     <option value="Parked">Parked</option>

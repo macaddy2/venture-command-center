@@ -14,6 +14,9 @@ export default tseslint.config(
         },
         rules: {
             ...reactHooks.configs.recommended.rules,
+            // Disable React Compiler-specific rules (compiler not configured in this project)
+            'react-hooks/preserve-manual-memoization': 'off',
+            'react-hooks/set-state-in-effect': 'off',
             'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
             '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
             '@typescript-eslint/no-explicit-any': 'warn',

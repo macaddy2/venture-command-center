@@ -8,6 +8,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useStore } from '../lib/store';
+import type { ViewKey } from '../lib/types';
 import { motion } from 'framer-motion';
 import {
     Send, Bot, User, Sparkles, AlertTriangle, Lightbulb,
@@ -67,7 +68,7 @@ function tryExecuteCommand(
         const target = navMatch[1].replace(/the\s+/g, '').trim();
         const viewKey = viewMap[target];
         if (viewKey) {
-            dispatch({ type: 'SET_ACTIVE_VIEW', payload: viewKey as any });
+            dispatch({ type: 'SET_ACTIVE_VIEW', payload: viewKey as ViewKey });
             return { handled: true, response: `✅ Navigated to **${target}** view.`, action: `Navigated to ${target}` };
         }
     }
@@ -78,7 +79,7 @@ function tryExecuteCommand(
         const target = showMatch[1].replace(/the\s+/g, '').trim();
         const viewKey = viewMap[target];
         if (viewKey) {
-            dispatch({ type: 'SET_ACTIVE_VIEW', payload: viewKey as any });
+            dispatch({ type: 'SET_ACTIVE_VIEW', payload: viewKey as ViewKey });
             return { handled: true, response: `✅ Opened **${target}** view.`, action: `Opened ${target}` };
         }
     }

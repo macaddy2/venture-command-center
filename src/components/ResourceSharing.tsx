@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { useStore } from '../lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { ResourceSharing } from '../lib/types';
+import type { ResourceSharing, ResourceType } from '../lib/types';
 import {
     Share2, Plus, X, ArrowRight, Calendar
 } from 'lucide-react';
@@ -154,7 +154,7 @@ export default function ResourceSharingView() {
                                 <input className="form-input" placeholder="Resource name (e.g., Sarah — Designer)" value={form.resource_name || ''}
                                     onChange={e => setForm(f => ({ ...f, resource_name: e.target.value }))} />
                                 <select className="form-select" value={form.resource_type}
-                                    onChange={e => setForm(f => ({ ...f, resource_type: e.target.value as any }))}>
+                                    onChange={e => setForm(f => ({ ...f, resource_type: e.target.value as ResourceType }))}>
                                     <option value="person">Person</option>
                                     <option value="tool">Tool / License</option>
                                     <option value="budget">Budget</option>

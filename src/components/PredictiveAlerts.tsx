@@ -7,6 +7,7 @@
 
 import { useMemo } from 'react';
 import { useStore } from '../lib/store';
+import type { ViewKey } from '../lib/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     AlertTriangle, Clock, TrendingDown, Users,
@@ -310,7 +311,7 @@ export default function PredictiveAlerts() {
                                         <button
                                             className="btn btn-secondary btn-sm"
                                             style={{ whiteSpace: 'nowrap', marginLeft: 'var(--space-3)' }}
-                                            onClick={() => dispatch({ type: 'SET_ACTIVE_VIEW', payload: alert.actionView as any })}
+                                            onClick={() => dispatch({ type: 'SET_ACTIVE_VIEW', payload: alert.actionView as ViewKey })}
                                         >
                                             {alert.actionLabel}
                                             <ArrowRight size={12} />
