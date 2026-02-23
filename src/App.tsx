@@ -3,6 +3,8 @@
 // ============================================================
 
 import { DataProvider, useStore } from './lib/store';
+import { useAuth } from './lib/useAuth';
+import AuthPage from './components/AuthPage';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
@@ -21,6 +23,7 @@ import RecurringTasks from './components/RecurringTasks';
 import ResourceSharingView from './components/ResourceSharing';
 import PredictiveAlerts from './components/PredictiveAlerts';
 import StandupGenerator from './components/StandupGenerator';
+import { Loader } from 'lucide-react';
 
 function AppContent() {
     const { state } = useStore();
@@ -61,6 +64,24 @@ function AppContent() {
 }
 
 function App() {
+    const { user, isLoading } = useAuth();
+
+    // Show loader while checking auth state
+    if (isLoading) {
+        return (
+            <div className="auth-loading">
+                <Loader size={32} className="auth-spinner" />
+                <p>Loading...</p>
+            </div>
+        );
+    }
+
+    // Not authenticated → show login page
+    if (!user) {
+        return <AuthPage />;
+    }
+
+    // Authenticated → show app
     return (
         <DataProvider>
             <AppContent />

@@ -4,14 +4,20 @@
 
 import { useStore } from '../lib/store';
 import { useTheme } from '../lib/theme';
-import { Search, Bell, RefreshCw, Plus, Sun, Moon } from 'lucide-react';
+import { useAuth } from '../lib/useAuth';
+import { Search, Bell, RefreshCw, Plus, Sun, Moon, LogOut, User } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Header() {
     const { state, dispatch } = useStore();
     const { theme, toggleTheme } = useTheme();
+    const { user, signOut } = useAuth();
     const unreadInsights = state.aiInsights.filter(i => !i.is_read).length;
     const [showNotif, setShowNotif] = useState(false);
+    const [showUserMenu, setShowUserMenu] = useState(false);
+
+    const userInitial = user?.email?.[0]?.toUpperCase() || 'U';
+    const userEmail = user?.email || 'Unknown';
 
     const viewTitles: Record<string, string> = {
         dashboard: 'Portfolio Dashboard',
@@ -50,7 +56,6 @@ export default function Header() {
                 <button
                     className="btn btn-primary btn-sm"
                     onClick={() => {
-                        // Will trigger add-task modal in tasks view
                         dispatch({ type: 'SET_ACTIVE_VIEW', payload: 'tasks' });
                     }}
                 >
@@ -73,7 +78,7 @@ export default function Header() {
                 <button
                     className="header-btn"
                     title="Notifications"
-                    onClick={() => setShowNotif(!showNotif)}
+                    onClick={() => { setShowNotif(!showNotif); setShowUserMenu(false); }}
                 >
                     <Bell size={16} />
                     {unreadInsights > 0 && (
@@ -81,7 +86,15 @@ export default function Header() {
                     )}
                 </button>
 
-                <div className="header-avatar" title="Ade">A</div>
+                {/* User Avatar */}
+                <div
+                    className="header-avatar"
+                    title={userEmail}
+                    onClick={() => { setShowUserMenu(!showUserMenu); setShowNotif(false); }}
+                    style={{ cursor: 'pointer' }}
+                >
+                    {userInitial}
+                </div>
             </div>
 
             {/* Notification Dropdown */}
@@ -145,6 +158,29 @@ export default function Header() {
                             </div>
                         ))
                     )}
+                </div>
+            )}
+
+            {/* User Account Menu */}
+            {showUserMenu && (
+                <div className="user-menu">
+                    <div className="user-menu-header">
+                        <div className="user-menu-avatar">
+                            <User size={18} />
+                        </div>
+                        <div className="user-menu-info">
+                            <div className="user-menu-email">{userEmail}</div>
+                            <div className="user-menu-label">Signed in</div>
+                        </div>
+                    </div>
+                    <div className="user-menu-divider" />
+                    <button
+                        className="user-menu-item user-menu-signout"
+                        onClick={() => signOut()}
+                    >
+                        <LogOut size={15} />
+                        Sign Out
+                    </button>
                 </div>
             )}
         </header>
