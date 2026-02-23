@@ -5,7 +5,7 @@
 import { useState, useMemo } from 'react';
 import { useStore } from '../lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { RecurringTask, RecurrencePattern } from '../lib/types';
+import type { Venture, RecurringTask, RecurrencePattern, TaskPriority } from '../lib/types';
 import {
     RefreshCw, Plus, X, Play, Pause, Calendar
 } from 'lucide-react';
@@ -26,7 +26,7 @@ export default function RecurringTasks() {
     });
 
     const grouped = useMemo(() => {
-        const groups: Record<string, { venture: any; tasks: RecurringTask[] }> = {};
+        const groups: Record<string, { venture: Venture; tasks: RecurringTask[] }> = {};
         state.recurringTasks.forEach(t => {
             const v = state.ventures.find(v => v.id === t.venture_id);
             if (!v) return;
@@ -210,7 +210,7 @@ export default function RecurringTasks() {
                                         )}
                                     </select>
                                     <select className="form-select" value={form.priority}
-                                        onChange={e => setForm(f => ({ ...f, priority: e.target.value as any }))}>
+                                        onChange={e => setForm(f => ({ ...f, priority: e.target.value as TaskPriority }))}>
                                         <option value="P0">🔴 P0 — Critical</option>
                                         <option value="P1">🟠 P1 — High</option>
                                         <option value="P2">🟡 P2 — Medium</option>

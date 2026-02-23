@@ -173,6 +173,7 @@ export default function KanbanBoard() {
                                                 key={task.id}
                                                 className="kanban-task-card"
                                                 draggable
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- bridging framer-motion and native drag event types
                                                 onDragStart={(e: any) => handleDragStart(e, task)}
                                                 onClick={() => { setEditingTask(task); setShowForm(true); }}
                                                 layout

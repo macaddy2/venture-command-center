@@ -117,7 +117,7 @@ function saveToStorage(state: AppState) {
 const defaultFilters: FilterState = { tier: 'all', geo: 'all', search: '', sortBy: 'name' };
 
 function getInitialState(): AppState {
-    const saved = loadFromStorage() as any;
+    const saved = loadFromStorage();
     return {
         ventures: saved?.ventures?.length ? saved.ventures : seedVentures,
         tasks: saved?.tasks?.length ? saved.tasks : seedTasks,
@@ -264,6 +264,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // Persist to localStorage on changes
     useEffect(() => {
         saveToStorage(state);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally listing data properties, not the full state object
     }, [state.ventures, state.tasks, state.milestones, state.teamRoles, state.registrations, state.githubStats, state.aiInsights, state.healthSnapshots, state.recurringTasks, state.financials, state.documents, state.risks, state.resourceSharing]);
 
     // Computed values
@@ -376,6 +377,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return React.createElement(DataContext.Provider, { value }, children);
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useStore(): StoreContext {
     const ctx = useContext(DataContext);
     if (!ctx) throw new Error('useStore must be used within DataProvider');

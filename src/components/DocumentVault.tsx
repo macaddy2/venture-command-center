@@ -5,7 +5,7 @@
 import { useState, useMemo } from 'react';
 import { useStore } from '../lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { VentureDocument, DocCategory } from '../lib/types';
+import type { Venture, VentureDocument, DocCategory } from '../lib/types';
 import {
     FileText, Plus, X, ExternalLink, Search,
     Briefcase, BarChart3, Code, Scale, Megaphone, FolderOpen
@@ -41,7 +41,7 @@ export default function DocumentVault() {
 
     // Group by venture
     const grouped = useMemo(() => {
-        const groups: Record<string, { venture: any; docs: typeof filtered }> = {};
+        const groups: Record<string, { venture: Venture; docs: typeof filtered }> = {};
         filtered.forEach(d => {
             const v = state.ventures.find(v => v.id === d.venture_id);
             if (!v) return;

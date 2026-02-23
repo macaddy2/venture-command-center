@@ -51,7 +51,7 @@ export function useSupabaseSync({ dispatch, onSyncComplete, onSyncError }: SyncO
             for (const { name, action } of tables) {
                 const { data, error } = await supabase.from(name).select('*');
                 if (error) {
-                    console.warn(`[Supabase Sync] Failed to load ${name}:`, error.message);
+                    console.warn(`[Supabase Sync] Failed to load ${name}:`, error.message); // eslint-disable-line no-console
                     continue;
                 }
                 if (data && data.length > 0) {
@@ -61,7 +61,7 @@ export function useSupabaseSync({ dispatch, onSyncComplete, onSyncError }: SyncO
 
             onSyncComplete?.();
         } catch (err) {
-            console.error('[Supabase Sync] Error loading data:', err);
+            console.error('[Supabase Sync] Error loading data:', err); // eslint-disable-line no-console
             onSyncError?.(err as Error);
         }
     }, [dispatch, onSyncComplete, onSyncError]);
@@ -111,13 +111,13 @@ export function useSupabaseSync({ dispatch, onSyncComplete, onSyncError }: SyncO
         try {
             if (operation === 'upsert') {
                 const { error } = await supabase.from(table).upsert(data);
-                if (error) console.warn(`[Supabase] Upsert ${table} failed:`, error.message);
+                if (error) console.warn(`[Supabase] Upsert ${table} failed:`, error.message); // eslint-disable-line no-console
             } else if (operation === 'delete' && data.id) {
                 const { error } = await supabase.from(table).delete().eq('id', data.id);
-                if (error) console.warn(`[Supabase] Delete ${table} failed:`, error.message);
+                if (error) console.warn(`[Supabase] Delete ${table} failed:`, error.message); // eslint-disable-line no-console
             }
         } catch (err) {
-            console.error(`[Supabase] Push to ${table} failed:`, err);
+            console.error(`[Supabase] Push to ${table} failed:`, err); // eslint-disable-line no-console
         }
     }, []);
 

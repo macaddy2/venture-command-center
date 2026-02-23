@@ -52,7 +52,7 @@ export function useGitHub(repoMappings: RepoMapping[], intervalMs: number = 15 *
                     synced_at: new Date().toISOString(),
                 });
             } catch (err) {
-                console.warn(`[GitHub] Failed to sync ${owner}/${repo}:`, err);
+                console.warn(`[GitHub] Failed to sync ${owner}/${repo}:`, err); // eslint-disable-line no-console
             }
         }
 
