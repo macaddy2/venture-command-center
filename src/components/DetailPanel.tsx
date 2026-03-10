@@ -4,6 +4,7 @@
 
 import type { VentureWithStats } from '../lib/types';
 import { useStore } from '../lib/store';
+import { taskStatusCssColors } from '../lib/utils';
 import {
     X, CheckCircle2, AlertTriangle, Clock, Target,
     Users, GitBranch, FileText, Globe, Building2, CreditCard, Scale, Check,
@@ -33,6 +34,9 @@ export default function DetailPanel({ venture: v, onClose }: Props) {
     const ventureTasks = state.tasks
         .filter(t => t.venture_id === v.id)
         .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+
+    // Implementation plans for this venture
+    const venturePlans = state.implementationPlans.filter(p => p.venture_id === v.id);
 
     return (
         <div className="detail-panel animate-slide-in">
@@ -280,61 +284,54 @@ export default function DetailPanel({ venture: v, onClose }: Props) {
                 )}
 
                 {/* Implementation Plan */}
-                {(() => {
-                    const plans = state.implementationPlans?.filter(p => p.venture_id === v.id) ?? [];
-                    if (plans.length === 0) return null;
-                    return plans.map(plan => {
-                        const completedPhases = plan.phases.filter(p => p.status === 'completed').length;
-                        const planProgress = plan.phases.length > 0 ? Math.round((completedPhases / plan.phases.length) * 100) : 0;
-                        const currentPhase = plan.phases
-                            .filter(p => p.status === 'in_progress')
-                            .sort((a, b) => a.order - b.order)[0];
-                        return (
-                            <div key={plan.id} className="detail-panel-section">
-                                <div className="detail-section-title">
-                                    <ClipboardList size={14} />
-                                    {plan.name}
-                                </div>
-                                <div className="progress-bar" style={{ marginBottom: 'var(--space-2)' }}>
-                                    <div className="progress-bar-fill" style={{ width: `${planProgress}%`, background: v.color }} />
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-2)' }}>
-                                    <span>{completedPhases}/{plan.phases.length} phases</span>
-                                    <span>{planProgress}%</span>
-                                </div>
-                                {currentPhase && (
-                                    <div style={{
-                                        fontSize: 'var(--font-size-xs)', padding: 'var(--space-2) var(--space-3)',
-                                        background: `${v.color}15`, borderRadius: 'var(--border-radius-sm)',
-                                        borderLeft: `3px solid ${v.color}`,
-                                    }}>
-                                        <span style={{ fontWeight: 600, color: 'var(--color-text-secondary)' }}>Current: </span>
-                                        <span style={{ color: 'var(--color-text-secondary)' }}>{currentPhase.name}</span>
-                                    </div>
-                                )}
-                                <button
-                                    onClick={() => dispatch({ type: 'SET_ACTIVE_VIEW', payload: 'plans' })}
-                                    style={{
-                                        marginTop: 'var(--space-2)', fontSize: 'var(--font-size-xs)',
-                                        color: 'var(--color-accent-primary)', background: 'none', border: 'none',
-                                        cursor: 'pointer', padding: 0, textDecoration: 'underline',
-                                    }}
-                                >
-                                    View full plan
-                                </button>
+                {venturePlans.map(plan => {
+                    const completedPhases = plan.phases.filter(p => p.status === 'completed').length;
+                    const planProgress = plan.phases.length > 0 ? Math.round((completedPhases / plan.phases.length) * 100) : 0;
+                    const currentPhase = plan.phases
+                        .filter(p => p.status === 'in_progress')
+                        .sort((a, b) => a.order - b.order)[0];
+                    return (
+                        <div key={plan.id} className="detail-panel-section">
+                            <div className="detail-section-title">
+                                <ClipboardList size={14} />
+                                {plan.name}
                             </div>
-                        );
-                    });
-                })()}
+                            <div className="progress-bar" style={{ marginBottom: 'var(--space-2)' }}>
+                                <div className="progress-bar-fill" style={{ width: `${planProgress}%`, background: v.color }} />
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-2)' }}>
+                                <span>{completedPhases}/{plan.phases.length} phases</span>
+                                <span>{planProgress}%</span>
+                            </div>
+                            {currentPhase && (
+                                <div style={{
+                                    fontSize: 'var(--font-size-xs)', padding: 'var(--space-2) var(--space-3)',
+                                    background: `${v.color}15`, borderRadius: 'var(--border-radius-sm)',
+                                    borderLeft: `3px solid ${v.color}`,
+                                }}>
+                                    <span style={{ fontWeight: 600, color: 'var(--color-text-secondary)' }}>Current: </span>
+                                    <span style={{ color: 'var(--color-text-secondary)' }}>{currentPhase.name}</span>
+                                </div>
+                            )}
+                            <button
+                                onClick={() => dispatch({ type: 'SET_ACTIVE_VIEW', payload: 'plans' })}
+                                style={{
+                                    marginTop: 'var(--space-2)', fontSize: 'var(--font-size-xs)',
+                                    color: 'var(--color-accent-primary)', background: 'none', border: 'none',
+                                    cursor: 'pointer', padding: 0, textDecoration: 'underline',
+                                }}
+                            >
+                                View full plan
+                            </button>
+                        </div>
+                    );
+                })}
 
                 {/* Recent Tasks */}
                 <div className="detail-panel-section">
                     <div className="detail-section-title">Recent Tasks</div>
                     {ventureTasks.slice(0, 8).map(task => {
-                        const statusColor = task.status === 'done' ? 'var(--color-success)'
-                            : task.status === 'blocked' ? 'var(--color-danger)'
-                                : task.status === 'in-progress' ? 'var(--color-info)'
-                                    : 'var(--color-text-muted)';
+                        const statusColor = taskStatusCssColors[task.status] ?? 'var(--color-text-muted)';
                         return (
                             <div key={task.id} style={{
                                 display: 'flex', alignItems: 'center', gap: 'var(--space-2)',

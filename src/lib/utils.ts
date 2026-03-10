@@ -133,6 +133,16 @@ export const taskStatusColors: Record<string, string> = {
     blocked: '#E74C3C',
 };
 
+/** CSS variable-based status colors for use in components */
+export const taskStatusCssColors: Record<string, string> = {
+    backlog: 'var(--color-text-muted)',
+    todo: 'var(--color-info)',
+    'in-progress': 'var(--color-accent-primary)',
+    review: 'var(--color-accent-secondary)',
+    done: 'var(--color-success)',
+    blocked: 'var(--color-danger)',
+};
+
 /**
  * Get priority config
  */

@@ -2,9 +2,9 @@
 // Settings View
 // ============================================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useStore } from '../lib/store';
-import type { VentureTier, SlackNotifyEvent } from '../lib/types';
+import type { Venture, VentureTier, SlackNotifyEvent } from '../lib/types';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { validateToken as validateGitHub } from '../lib/github';
 import { validateApiKey as validateOpenAI } from '../lib/openai';
@@ -88,6 +88,8 @@ export default function SettingsView() {
         setTestingOpenai(result.valid ? 'success' : 'error');
         setTimeout(() => setTestingOpenai('idle'), 3000);
     };
+
+    const activeVentures: Venture[] = useMemo(() => state.ventures.filter(v => v.tier !== 'Parked'), [state.ventures]);
 
     const handleResetData = () => {
         if (confirm('This will reset ALL data to the initial seed data. Are you sure?')) {
@@ -247,7 +249,7 @@ export default function SettingsView() {
                     The agent will monitor these directories for README.md, TODO.md, package.json, and CHANGELOG changes.
                 </div>
                 <div style={{ marginTop: 'var(--space-3)' }}>
-                    {state.ventures.filter(v => v.tier !== 'Parked').map(v => (
+                    {activeVentures.map(v => (
                         <div key={v.id} style={{
                             display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
                             padding: 'var(--space-2) 0', borderBottom: '1px solid var(--border-color)',
@@ -272,7 +274,7 @@ export default function SettingsView() {
                         <div className="settings-subtitle" style={{ marginBottom: 0 }}>Link repositories to ventures for activity tracking</div>
                     </div>
                 </div>
-                {state.ventures.filter(v => v.tier !== 'Parked').map(v => {
+                {activeVentures.map(v => {
                     const repos = v.integrations?.github ?? [];
                     return (
                         <div key={v.id} style={{ marginBottom: 'var(--space-3)', padding: 'var(--space-3)', background: 'var(--color-bg-tertiary)', borderRadius: 'var(--border-radius-md)' }}>
@@ -337,7 +339,7 @@ export default function SettingsView() {
                 }}>
                     Create an incoming webhook at <code>api.slack.com/apps</code> and paste the URL below.
                 </div>
-                {state.ventures.filter(v => v.tier !== 'Parked').map(v => {
+                {activeVentures.map(v => {
                     const slack = v.integrations?.slack;
                     const webhookUrl = slack?.webhook_url ?? '';
                     const notifyOn = slack?.notify_on ?? [];

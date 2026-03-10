@@ -7,11 +7,14 @@
 
 import type { SlackNotifyEvent } from './types';
 
+type SlackBlockType = 'section' | 'divider' | 'header' | 'context' | 'actions' | 'image';
+type SlackTextType = 'mrkdwn' | 'plain_text';
+
 export interface SlackBlock {
-    type: string;
-    text?: { type: string; text: string; emoji?: boolean };
-    fields?: { type: string; text: string }[];
-    elements?: { type: string; text: string }[];
+    type: SlackBlockType;
+    text?: { type: SlackTextType; text: string; emoji?: boolean };
+    fields?: { type: SlackTextType; text: string }[];
+    elements?: { type: SlackTextType; text: string }[];
 }
 
 export interface SlackMessage {
