@@ -46,11 +46,14 @@ export function useSlackNotifier() {
         // Skip on first render
         if (prev === state.tasks) return;
 
+        const prevById = new Map(prev.map(t => [t.id, t]));
+        const ventureById = new Map(state.ventures.map(v => [v.id, v]));
+
         for (const task of state.tasks) {
-            const prevTask = prev.find(t => t.id === task.id);
+            const prevTask = prevById.get(task.id);
             if (!prevTask || prevTask.status === task.status) continue;
 
-            const venture = state.ventures.find(v => v.id === task.venture_id);
+            const venture = ventureById.get(task.venture_id);
             if (!venture?.integrations?.slack) continue;
             const { webhook_url, notify_on } = venture.integrations.slack;
             if (!isSlackWebhookValid(webhook_url)) continue;
@@ -70,11 +73,14 @@ export function useSlackNotifier() {
 
         if (prev === state.milestones) return;
 
+        const prevById = new Map(prev.map(m => [m.id, m]));
+        const ventureById = new Map(state.ventures.map(v => [v.id, v]));
+
         for (const milestone of state.milestones) {
-            const prevMilestone = prev.find(m => m.id === milestone.id);
+            const prevMilestone = prevById.get(milestone.id);
             if (!prevMilestone || prevMilestone.progress === milestone.progress) continue;
 
-            const venture = state.ventures.find(v => v.id === milestone.venture_id);
+            const venture = ventureById.get(milestone.venture_id);
             if (!venture?.integrations?.slack) continue;
             const { webhook_url, notify_on } = venture.integrations.slack;
             if (!isSlackWebhookValid(webhook_url) || !shouldNotify(notify_on, 'milestone_update')) continue;

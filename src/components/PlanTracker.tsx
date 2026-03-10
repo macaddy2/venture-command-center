@@ -5,7 +5,8 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../lib/store';
-import type { ImplementationPlan, PlanPhase, PlanPhaseStatus } from '../lib/types';
+import { taskStatusCssColors } from '../lib/utils';
+import type { ImplementationPlan, PlanPhase, PlanPhaseStatus, Task } from '../lib/types';
 import {
     ClipboardList, Plus, Trash2, ChevronDown, ChevronRight,
     Circle, CheckCircle2, Clock, AlertTriangle, X, GripVertical,
@@ -18,30 +19,29 @@ const PHASE_STATUS_CONFIG: Record<PlanPhaseStatus, { label: string; color: strin
     blocked: { label: 'Blocked', color: 'var(--color-danger)', icon: AlertTriangle },
 };
 
-function computePlanProgress(plan: ImplementationPlan, tasks: { plan_phase_id?: string | null; status: string }[]): number {
+function computePlanProgress(plan: ImplementationPlan, tasksByPhase: Map<string, Pick<Task, 'plan_phase_id' | 'status'>[]>): number {
     if (plan.phases.length === 0) return 0;
     const completed = plan.phases.filter(p => p.status === 'completed').length;
 
-    // For in-progress phases, compute from linked tasks
     let partialProgress = 0;
-    const inProgressPhases = plan.phases.filter(p => p.status === 'in_progress');
-    for (const phase of inProgressPhases) {
-        const phaseTasks = tasks.filter(t => t.plan_phase_id === phase.id);
-        if (phaseTasks.length > 0) {
+    for (const phase of plan.phases) {
+        if (phase.status !== 'in_progress') continue;
+        const phaseTasks = tasksByPhase.get(phase.id);
+        if (phaseTasks && phaseTasks.length > 0) {
             const done = phaseTasks.filter(t => t.status === 'done').length;
             partialProgress += done / phaseTasks.length;
         } else {
-            partialProgress += 0.5; // Default 50% for in-progress with no linked tasks
+            partialProgress += 0.5;
         }
     }
 
     return Math.round(((completed + partialProgress) / plan.phases.length) * 100);
 }
 
-function PhaseRow({ phase, planId, tasks, ventureColor, onToggle, isExpanded }: {
+function PhaseRow({ phase, planId, linkedTasks, ventureColor, onToggle, isExpanded }: {
     phase: PlanPhase;
     planId: string;
-    tasks: { id: string; title: string; status: string; priority: string; plan_phase_id?: string | null }[];
+    linkedTasks: Pick<Task, 'id' | 'title' | 'status' | 'priority'>[];
     ventureColor: string;
     onToggle: () => void;
     isExpanded: boolean;
@@ -49,7 +49,6 @@ function PhaseRow({ phase, planId, tasks, ventureColor, onToggle, isExpanded }: 
     const { updatePhase, deletePhase } = useStore();
     const config = PHASE_STATUS_CONFIG[phase.status];
     const Icon = config.icon;
-    const linkedTasks = tasks.filter(t => t.plan_phase_id === phase.id);
     const doneTasks = linkedTasks.filter(t => t.status === 'done').length;
     const taskProgress = linkedTasks.length > 0 ? Math.round((doneTasks / linkedTasks.length) * 100) : null;
 
@@ -137,7 +136,7 @@ function PhaseRow({ phase, planId, tasks, ventureColor, onToggle, isExpanded }: 
                                 }}>
                                     <span style={{
                                         width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                                        background: task.status === 'done' ? 'var(--color-success)' : task.status === 'blocked' ? 'var(--color-danger)' : task.status === 'in-progress' ? 'var(--color-accent-primary)' : 'var(--color-text-muted)',
+                                        background: taskStatusCssColors[task.status] ?? 'var(--color-text-muted)',
                                     }} />
                                     <span style={{ color: 'var(--color-text-secondary)', flex: 1 }}>{task.title}</span>
                                     <span style={{
@@ -180,7 +179,20 @@ export default function PlanTracker() {
         return state.implementationPlans.filter(p => p.venture_id === selectedVentureId);
     }, [state.implementationPlans, selectedVentureId]);
 
-    const ventures = state.ventures.filter(v => v.tier !== 'Parked');
+    const ventures = useMemo(() => state.ventures.filter(v => v.tier !== 'Parked'), [state.ventures]);
+
+    // Pre-group tasks by plan_phase_id for efficient lookup
+    const tasksByPhase = useMemo(() => {
+        const map = new Map<string, Task[]>();
+        for (const task of state.tasks) {
+            if (task.plan_phase_id) {
+                const existing = map.get(task.plan_phase_id);
+                if (existing) existing.push(task);
+                else map.set(task.plan_phase_id, [task]);
+            }
+        }
+        return map;
+    }, [state.tasks]);
 
     const togglePhase = (id: string) => {
         setExpandedPhases(prev => {
@@ -312,20 +324,16 @@ export default function PlanTracker() {
 
             {/* Plans */}
             {plans.length === 0 ? (
-                <div style={{
-                    textAlign: 'center', padding: 'var(--space-8)', color: 'var(--color-text-muted)',
-                    background: 'var(--color-bg-secondary)', borderRadius: 'var(--border-radius-lg)',
-                    border: '1px solid var(--border-color)',
-                }}>
-                    <ClipboardList size={40} style={{ marginBottom: 'var(--space-3)', opacity: 0.3 }} />
-                    <div style={{ fontSize: 'var(--font-size-sm)' }}>No implementation plans yet</div>
-                    <div style={{ fontSize: 'var(--font-size-xs)', marginTop: 'var(--space-1)' }}>Create a plan to track development phases</div>
+                <div className="empty-state" style={{ padding: 'var(--space-8)' }}>
+                    <ClipboardList size={40} className="empty-state-icon" />
+                    <div className="empty-state-title">No implementation plans yet</div>
+                    <div className="empty-state-text">Create a plan to track development phases</div>
                 </div>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
                     {plans.map(plan => {
                         const venture = state.ventures.find(v => v.id === plan.venture_id);
-                        const progress = computePlanProgress(plan, state.tasks);
+                        const progress = computePlanProgress(plan, tasksByPhase);
                         const sortedPhases = [...plan.phases].sort((a, b) => a.order - b.order);
 
                         return (
@@ -343,11 +351,7 @@ export default function PlanTracker() {
                                     borderBottom: '1px solid var(--border-color)',
                                 }}>
                                     {venture && (
-                                        <span style={{
-                                            width: 32, height: 32, borderRadius: 'var(--border-radius-sm)',
-                                            background: venture.color, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            color: '#fff', fontWeight: 700, fontSize: 'var(--font-size-xs)', flexShrink: 0,
-                                        }}>
+                                        <span className="venture-prefix" style={{ background: venture.color }}>
                                             {venture.prefix}
                                         </span>
                                     )}
@@ -390,7 +394,7 @@ export default function PlanTracker() {
                                             key={phase.id}
                                             phase={phase}
                                             planId={plan.id}
-                                            tasks={state.tasks}
+                                            linkedTasks={tasksByPhase.get(phase.id) ?? []}
                                             ventureColor={venture?.color ?? 'var(--color-accent-primary)'}
                                             isExpanded={expandedPhases.has(phase.id)}
                                             onToggle={() => togglePhase(phase.id)}
