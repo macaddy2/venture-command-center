@@ -6,7 +6,8 @@ import type { VentureWithStats } from '../lib/types';
 import { useStore } from '../lib/store';
 import {
     X, CheckCircle2, AlertTriangle, Clock, Target,
-    Users, GitBranch, FileText, Globe, Building2, CreditCard, Scale, Check
+    Users, GitBranch, FileText, Globe, Building2, CreditCard, Scale, Check,
+    ExternalLink, ClipboardList,
 } from 'lucide-react';
 import EditableField from './EditableField';
 
@@ -21,7 +22,7 @@ const STAGE_OPTIONS = [
 ].map(s => ({ label: s, value: s }));
 
 export default function DetailPanel({ venture: v, onClose }: Props) {
-    const { state, updateVenture } = useStore();
+    const { state, dispatch, updateVenture } = useStore();
     const progress = v.tasks.total > 0 ? Math.round((v.tasks.done / v.tasks.total) * 100) : 0;
 
     const healthColor = v.healthScore >= 60 ? 'var(--color-success)'
@@ -215,6 +216,27 @@ export default function DetailPanel({ venture: v, onClose }: Props) {
                             <GitBranch size={14} />
                             GitHub Activity
                         </div>
+                        {v.integrations?.github && v.integrations.github.length > 0 && (
+                            <div style={{ marginBottom: 'var(--space-3)' }}>
+                                {v.integrations.github.map((repo, i) => (
+                                    <a
+                                        key={i}
+                                        href={repo.url || `https://github.com/${repo.owner}/${repo.repo}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
+                                            fontSize: 'var(--font-size-xs)', color: 'var(--color-accent-primary)',
+                                            textDecoration: 'none', padding: '3px 0',
+                                        }}
+                                    >
+                                        <GitBranch size={12} />
+                                        {repo.owner}/{repo.repo}
+                                        <ExternalLink size={10} style={{ opacity: 0.5 }} />
+                                    </a>
+                                ))}
+                            </div>
+                        )}
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-3)', textAlign: 'center' }}>
                             <div>
                                 <div style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, color: 'var(--color-text-primary)' }}>{v.github.repos}</div>
@@ -256,6 +278,54 @@ export default function DetailPanel({ venture: v, onClose }: Props) {
                         ))}
                     </div>
                 )}
+
+                {/* Implementation Plan */}
+                {(() => {
+                    const plans = state.implementationPlans?.filter(p => p.venture_id === v.id) ?? [];
+                    if (plans.length === 0) return null;
+                    return plans.map(plan => {
+                        const completedPhases = plan.phases.filter(p => p.status === 'completed').length;
+                        const planProgress = plan.phases.length > 0 ? Math.round((completedPhases / plan.phases.length) * 100) : 0;
+                        const currentPhase = plan.phases
+                            .filter(p => p.status === 'in_progress')
+                            .sort((a, b) => a.order - b.order)[0];
+                        return (
+                            <div key={plan.id} className="detail-panel-section">
+                                <div className="detail-section-title">
+                                    <ClipboardList size={14} />
+                                    {plan.name}
+                                </div>
+                                <div className="progress-bar" style={{ marginBottom: 'var(--space-2)' }}>
+                                    <div className="progress-bar-fill" style={{ width: `${planProgress}%`, background: v.color }} />
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-2)' }}>
+                                    <span>{completedPhases}/{plan.phases.length} phases</span>
+                                    <span>{planProgress}%</span>
+                                </div>
+                                {currentPhase && (
+                                    <div style={{
+                                        fontSize: 'var(--font-size-xs)', padding: 'var(--space-2) var(--space-3)',
+                                        background: `${v.color}15`, borderRadius: 'var(--border-radius-sm)',
+                                        borderLeft: `3px solid ${v.color}`,
+                                    }}>
+                                        <span style={{ fontWeight: 600, color: 'var(--color-text-secondary)' }}>Current: </span>
+                                        <span style={{ color: 'var(--color-text-secondary)' }}>{currentPhase.name}</span>
+                                    </div>
+                                )}
+                                <button
+                                    onClick={() => dispatch({ type: 'SET_ACTIVE_VIEW', payload: 'plans' })}
+                                    style={{
+                                        marginTop: 'var(--space-2)', fontSize: 'var(--font-size-xs)',
+                                        color: 'var(--color-accent-primary)', background: 'none', border: 'none',
+                                        cursor: 'pointer', padding: 0, textDecoration: 'underline',
+                                    }}
+                                >
+                                    View full plan
+                                </button>
+                            </div>
+                        );
+                    });
+                })()}
 
                 {/* Recent Tasks */}
                 <div className="detail-panel-section">

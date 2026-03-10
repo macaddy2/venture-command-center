@@ -25,10 +25,13 @@ import PredictiveAlerts from './components/PredictiveAlerts';
 import StandupGenerator from './components/StandupGenerator';
 import EquityTracker from './components/EquityTracker';
 import SchedulePlanner from './components/SchedulePlanner';
+import PlanTracker from './components/PlanTracker';
+import { useSlackNotifier } from './hooks/useSlackNotifier';
 import { Loader } from 'lucide-react';
 
 function AppContent() {
     const { state } = useStore();
+    useSlackNotifier();
 
     const renderView = () => {
         switch (state.activeView) {
@@ -50,6 +53,7 @@ function AppContent() {
             case 'standup': return <StandupGenerator />;
             case 'equity': return <EquityTracker />;
             case 'schedule': return <SchedulePlanner />;
+            case 'plans': return <PlanTracker />;
             default: return <Dashboard />;
         }
     };

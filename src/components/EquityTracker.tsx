@@ -155,7 +155,7 @@ export default function EquityTracker() {
                                     cx="50%"
                                     cy="50%"
                                     outerRadius={100}
-                                    label={({ name, value }) => `${value}%`}
+                                    label={({ value }) => `${value}%`}
                                     labelLine={false}
                                 >
                                     {pieData.map((entry, i) => (

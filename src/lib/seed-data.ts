@@ -2,7 +2,7 @@
 // Seed Data — Initial venture portfolio (from prototype)
 // ============================================================
 
-import type { Venture, Task, Milestone, TeamRole, Registration, GitHubStats, EquityRecord, ScheduleBlock, FinancialRecord, VentureDocument, Risk, RecurringTask, ResourceSharing, HealthSnapshot } from './types';
+import type { Venture, Task, Milestone, TeamRole, Registration, GitHubStats, EquityRecord, ScheduleBlock, FinancialRecord, VentureDocument, Risk, RecurringTask, ResourceSharing, HealthSnapshot, ImplementationPlan } from './types';
 import { generateId } from './utils';
 
 // --- Venture IDs (stable for references) ---
@@ -302,5 +302,57 @@ export const seedScheduleBlocks: ScheduleBlock[] = [
     { id: generateId(), date: '2026-03-12', time_slot: 'PM', venture_id: IDS.fx, title: 'Architecture design session' },
     { id: generateId(), date: '2026-03-13', time_slot: 'AM', venture_id: IDS.fl, title: 'Shared component library sprint' },
     { id: generateId(), date: '2026-03-13', time_slot: 'PM', venture_id: IDS.dg, title: 'Backend implementation' },
+];
+
+// --- Stable plan IDs for task references ---
+const PLAN_IDS = {
+    tc: 'plan-trucycle-001',
+    dg: 'plan-depositguard-001',
+    fx: 'plan-fixars-001',
+};
+
+export const seedImplementationPlans: ImplementationPlan[] = [
+    {
+        id: PLAN_IDS.tc,
+        venture_id: IDS.tc,
+        name: 'TruCycle MVP Launch',
+        description: 'End-to-end plan to reach MVP launch with seller dashboard, buyer flow, and verification system',
+        phases: [
+            { id: generateId(), plan_id: PLAN_IDS.tc, name: 'Research & Validation', description: 'Market research, competitor analysis, user interviews', status: 'completed', order: 1, target_start: '2025-11-01', target_end: '2025-12-15', created_at: '2025-11-01T00:00:00Z', updated_at: '2026-01-10T00:00:00Z' },
+            { id: generateId(), plan_id: PLAN_IDS.tc, name: 'Architecture & Setup', description: 'Tech stack decisions, repo setup, CI/CD, design system', status: 'completed', order: 2, target_start: '2025-12-15', target_end: '2026-01-15', created_at: '2025-11-01T00:00:00Z', updated_at: '2026-01-20T00:00:00Z' },
+            { id: generateId(), plan_id: PLAN_IDS.tc, name: 'Core MVP Build', description: 'Seller dashboard, buyer search, listing flow, payment integration', status: 'in_progress', order: 3, target_start: '2026-01-15', target_end: '2026-03-31', created_at: '2025-11-01T00:00:00Z', updated_at: '2026-03-01T00:00:00Z' },
+            { id: generateId(), plan_id: PLAN_IDS.tc, name: 'Testing & QA', description: 'Integration tests, UAT, security audit, performance', status: 'not_started', order: 4, target_start: '2026-04-01', target_end: '2026-04-30', created_at: '2025-11-01T00:00:00Z', updated_at: '2025-11-01T00:00:00Z' },
+            { id: generateId(), plan_id: PLAN_IDS.tc, name: 'Launch & Growth', description: 'Soft launch, marketing, feedback loop, iteration', status: 'not_started', order: 5, target_start: '2026-05-01', target_end: '2026-06-30', created_at: '2025-11-01T00:00:00Z', updated_at: '2025-11-01T00:00:00Z' },
+        ],
+        created_at: '2025-11-01T00:00:00Z',
+        updated_at: '2026-03-01T00:00:00Z',
+    },
+    {
+        id: PLAN_IDS.dg,
+        venture_id: IDS.dg,
+        name: 'DepositGuard Platform Build',
+        description: 'From concept to live product — deposit protection SaaS for UK letting agents',
+        phases: [
+            { id: generateId(), plan_id: PLAN_IDS.dg, name: 'Legal & Compliance Research', description: 'TDS regulations, FCA requirements, legal model', status: 'in_progress', order: 1, target_start: '2025-12-01', target_end: '2026-02-28', created_at: '2025-12-01T00:00:00Z', updated_at: '2026-02-15T00:00:00Z' },
+            { id: generateId(), plan_id: PLAN_IDS.dg, name: 'Company Registration', description: 'Companies House, bank account, domain, legal setup', status: 'in_progress', order: 2, target_start: '2026-01-15', target_end: '2026-03-15', created_at: '2025-12-01T00:00:00Z', updated_at: '2026-02-15T00:00:00Z' },
+            { id: generateId(), plan_id: PLAN_IDS.dg, name: 'Prototype & Design', description: 'Wireframes, UI design, prototype, user testing', status: 'not_started', order: 3, target_start: '2026-03-15', target_end: '2026-05-01', created_at: '2025-12-01T00:00:00Z', updated_at: '2025-12-01T00:00:00Z' },
+            { id: generateId(), plan_id: PLAN_IDS.dg, name: 'MVP Development', description: 'Backend, API, frontend, payment flow, agent portal', status: 'not_started', order: 4, target_start: '2026-05-01', target_end: '2026-08-01', created_at: '2025-12-01T00:00:00Z', updated_at: '2025-12-01T00:00:00Z' },
+        ],
+        created_at: '2025-12-01T00:00:00Z',
+        updated_at: '2026-02-15T00:00:00Z',
+    },
+    {
+        id: PLAN_IDS.fx,
+        venture_id: IDS.fx,
+        name: 'Fixars Superapp Architecture',
+        description: 'Modular superapp architecture with shared services and sub-app ecosystem',
+        phases: [
+            { id: generateId(), plan_id: PLAN_IDS.fx, name: 'CAC Registration', description: 'Nigerian company registration, tax ID, compliance', status: 'in_progress', order: 1, target_start: '2025-10-01', target_end: '2026-03-31', created_at: '2025-10-01T00:00:00Z', updated_at: '2026-02-15T00:00:00Z' },
+            { id: generateId(), plan_id: PLAN_IDS.fx, name: 'Architecture Design', description: 'Monorepo setup, shared services, API gateway, auth', status: 'in_progress', order: 2, target_start: '2026-01-01', target_end: '2026-04-30', created_at: '2025-10-01T00:00:00Z', updated_at: '2026-03-01T00:00:00Z' },
+            { id: generateId(), plan_id: PLAN_IDS.fx, name: 'Core Services Build', description: 'Auth, payments, notifications, user profiles', status: 'not_started', order: 3, target_start: '2026-04-01', target_end: '2026-07-31', created_at: '2025-10-01T00:00:00Z', updated_at: '2025-10-01T00:00:00Z' },
+        ],
+        created_at: '2025-10-01T00:00:00Z',
+        updated_at: '2026-03-01T00:00:00Z',
+    },
 ];
 
