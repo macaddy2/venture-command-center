@@ -25,6 +25,11 @@ export default function TaskForm({ task, ventureId, onClose }: Props) {
     const [priority, setPriority] = useState<TaskPriority>(task?.priority || 'P2');
     const [selectedVenture, setSelectedVenture] = useState(task?.venture_id || ventureId || '');
     const [dueDate, setDueDate] = useState(task?.due_date || '');
+    const [planPhaseId, setPlanPhaseId] = useState(task?.plan_phase_id || '');
+
+    // Get plan phases for selected venture
+    const venturePlans = state.implementationPlans.filter(p => p.venture_id === selectedVenture);
+    const availablePhases = venturePlans.flatMap(p => p.phases.map(ph => ({ ...ph, planName: p.name })));
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -39,6 +44,7 @@ export default function TaskForm({ task, ventureId, onClose }: Props) {
                 priority,
                 venture_id: selectedVenture,
                 due_date: dueDate || null,
+                plan_phase_id: planPhaseId || null,
             });
         } else {
             addTask({
@@ -48,6 +54,7 @@ export default function TaskForm({ task, ventureId, onClose }: Props) {
                 priority,
                 venture_id: selectedVenture,
                 due_date: dueDate || null,
+                plan_phase_id: planPhaseId || null,
                 parent_id: null,
                 milestone_id: null,
                 blocked_by: null,
@@ -105,6 +112,22 @@ export default function TaskForm({ task, ventureId, onClose }: Props) {
                                 placeholder="Details, context, links..."
                             />
                         </div>
+
+                        {availablePhases.length > 0 && (
+                            <div className="form-group">
+                                <label className="form-label">Plan Phase</label>
+                                <select
+                                    className="form-select"
+                                    value={planPhaseId}
+                                    onChange={e => setPlanPhaseId(e.target.value)}
+                                >
+                                    <option value="">No phase</option>
+                                    {availablePhases.map(ph => (
+                                        <option key={ph.id} value={ph.id}>{ph.planName} — {ph.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-4)' }}>
                             <div className="form-group">

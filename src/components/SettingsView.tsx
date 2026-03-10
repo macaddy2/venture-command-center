@@ -4,17 +4,26 @@
 
 import { useState, useEffect } from 'react';
 import { useStore } from '../lib/store';
-import type { VentureTier } from '../lib/types';
+import type { VentureTier, SlackNotifyEvent } from '../lib/types';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { validateToken as validateGitHub } from '../lib/github';
 import { validateApiKey as validateOpenAI } from '../lib/openai';
+import { testSlackWebhook, isSlackWebhookValid } from '../lib/slack';
 import {
     Database, Github, Bot, FolderOpen, Save,
-    CheckCircle2, AlertCircle, Trash2, Plus, RefreshCw, Loader
+    CheckCircle2, AlertCircle, Trash2, Plus, RefreshCw, Loader,
+    MessageSquare, Link,
 } from 'lucide-react';
 
+const SLACK_EVENT_OPTIONS: { key: SlackNotifyEvent; label: string }[] = [
+    { key: 'task_done', label: 'Task completed' },
+    { key: 'task_blocked', label: 'Task blocked' },
+    { key: 'milestone_update', label: 'Milestone progress' },
+    { key: 'health_change', label: 'Health score change' },
+];
+
 export default function SettingsView() {
-    const { state, dispatch, addVenture } = useStore();
+    const { state, dispatch, addVenture, updateVenture } = useStore();
     const [githubToken, setGithubToken] = useState('');
     const [openaiKey, setOpenaiKey] = useState('');
     const [openaiModel, setOpenaiModel] = useState('gpt-4o-mini');
@@ -252,6 +261,150 @@ export default function SettingsView() {
                         </div>
                     ))}
                 </div>
+            </div>
+
+            {/* GitHub Repo Mappings */}
+            <div className="settings-section">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+                    <Link size={20} style={{ color: 'var(--color-text-primary)' }} />
+                    <div>
+                        <div className="settings-title">GitHub Repo Mappings</div>
+                        <div className="settings-subtitle" style={{ marginBottom: 0 }}>Link repositories to ventures for activity tracking</div>
+                    </div>
+                </div>
+                {state.ventures.filter(v => v.tier !== 'Parked').map(v => {
+                    const repos = v.integrations?.github ?? [];
+                    return (
+                        <div key={v.id} style={{ marginBottom: 'var(--space-3)', padding: 'var(--space-3)', background: 'var(--color-bg-tertiary)', borderRadius: 'var(--border-radius-md)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+                                <span style={{ width: 8, height: 8, borderRadius: '50%', background: v.color }} />
+                                <span style={{ fontWeight: 600, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)' }}>{v.name}</span>
+                            </div>
+                            {repos.map((repo, i) => (
+                                <div key={i} style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-2)', alignItems: 'center' }}>
+                                    <input
+                                        className="form-input"
+                                        style={{ flex: 1, fontSize: 'var(--font-size-sm)' }}
+                                        placeholder="owner/repo"
+                                        value={`${repo.owner}/${repo.repo}`}
+                                        onChange={e => {
+                                            const [owner, ...rest] = e.target.value.split('/');
+                                            const repoName = rest.join('/');
+                                            const updated = [...repos];
+                                            updated[i] = { owner: owner || '', repo: repoName || '' };
+                                            updateVenture({ ...v, integrations: { ...v.integrations, github: updated } });
+                                        }}
+                                    />
+                                    <button
+                                        className="btn btn-ghost btn-icon btn-sm"
+                                        onClick={() => {
+                                            const updated = repos.filter((_, idx) => idx !== i);
+                                            updateVenture({ ...v, integrations: { ...v.integrations, github: updated.length > 0 ? updated : undefined } });
+                                        }}
+                                    >
+                                        <Trash2 size={12} />
+                                    </button>
+                                </div>
+                            ))}
+                            <button
+                                className="btn btn-ghost btn-sm"
+                                style={{ fontSize: 'var(--font-size-xs)' }}
+                                onClick={() => {
+                                    const updated = [...repos, { owner: '', repo: '' }];
+                                    updateVenture({ ...v, integrations: { ...v.integrations, github: updated } });
+                                }}
+                            >
+                                <Plus size={12} /> Add repo
+                            </button>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Slack Integration */}
+            <div className="settings-section">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+                    <MessageSquare size={20} style={{ color: '#E01E5A' }} />
+                    <div>
+                        <div className="settings-title">Slack Integration</div>
+                        <div className="settings-subtitle" style={{ marginBottom: 0 }}>Webhook notifications per venture</div>
+                    </div>
+                </div>
+                <div style={{
+                    background: 'var(--color-bg-tertiary)', borderRadius: 'var(--border-radius-md)',
+                    padding: 'var(--space-3) var(--space-4)', marginBottom: 'var(--space-4)',
+                    fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', lineHeight: 1.6,
+                }}>
+                    Create an incoming webhook at <code>api.slack.com/apps</code> and paste the URL below.
+                </div>
+                {state.ventures.filter(v => v.tier !== 'Parked').map(v => {
+                    const slack = v.integrations?.slack;
+                    const webhookUrl = slack?.webhook_url ?? '';
+                    const notifyOn = slack?.notify_on ?? [];
+                    return (
+                        <div key={v.id} style={{ marginBottom: 'var(--space-3)', padding: 'var(--space-3)', background: 'var(--color-bg-tertiary)', borderRadius: 'var(--border-radius-md)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+                                <span style={{ width: 8, height: 8, borderRadius: '50%', background: v.color }} />
+                                <span style={{ fontWeight: 600, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)' }}>{v.name}</span>
+                                {isSlackWebhookValid(webhookUrl) && <CheckCircle2 size={12} color="var(--color-success)" />}
+                            </div>
+                            <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+                                <input
+                                    className="form-input"
+                                    style={{ flex: 1, fontSize: 'var(--font-size-sm)' }}
+                                    placeholder="https://hooks.slack.com/services/..."
+                                    value={webhookUrl}
+                                    onChange={e => {
+                                        updateVenture({
+                                            ...v,
+                                            integrations: {
+                                                ...v.integrations,
+                                                slack: { webhook_url: e.target.value, channel_name: slack?.channel_name, notify_on: notifyOn },
+                                            },
+                                        });
+                                    }}
+                                />
+                                <button
+                                    className="btn btn-sm"
+                                    style={{ background: 'var(--color-bg-secondary)', fontSize: 'var(--font-size-xs)' }}
+                                    disabled={!isSlackWebhookValid(webhookUrl)}
+                                    onClick={async () => {
+                                        const ok = await testSlackWebhook(webhookUrl);
+                                        alert(ok ? 'Webhook test successful!' : 'Webhook test failed.');
+                                    }}
+                                >
+                                    Test
+                                </button>
+                            </div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+                                {SLACK_EVENT_OPTIONS.map(opt => (
+                                    <label key={opt.key} style={{
+                                        display: 'flex', alignItems: 'center', gap: 4,
+                                        fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', cursor: 'pointer',
+                                    }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={notifyOn.includes(opt.key)}
+                                            onChange={e => {
+                                                const updated = e.target.checked
+                                                    ? [...notifyOn, opt.key]
+                                                    : notifyOn.filter(n => n !== opt.key);
+                                                updateVenture({
+                                                    ...v,
+                                                    integrations: {
+                                                        ...v.integrations,
+                                                        slack: { webhook_url: webhookUrl, channel_name: slack?.channel_name, notify_on: updated },
+                                                    },
+                                                });
+                                            }}
+                                        />
+                                        {opt.label}
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
 
             {/* Venture Management */}

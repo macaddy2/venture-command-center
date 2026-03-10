@@ -9,7 +9,7 @@ import {
     ChevronLeft, ChevronRight, Zap, Calendar, Target,
     DollarSign, FileText, ShieldAlert, GitCompare,
     Mail, RefreshCw, Share2, AlertCircle, ClipboardList,
-    PieChart, CalendarRange
+    PieChart, CalendarRange, Map,
 } from 'lucide-react';
 
 const navItems: { key: ViewKey; label: string; icon: typeof LayoutDashboard }[] = [
@@ -22,6 +22,7 @@ const navItems: { key: ViewKey; label: string; icon: typeof LayoutDashboard }[] 
     { key: 'financials', label: 'Financials', icon: DollarSign },
     { key: 'equity', label: 'Equity', icon: PieChart },
     { key: 'schedule', label: 'Schedule', icon: CalendarRange },
+    { key: 'plans', label: 'Plans', icon: Map },
     { key: 'documents', label: 'Documents', icon: FileText },
     { key: 'risks', label: 'Risks', icon: ShieldAlert },
     { key: 'recurring', label: 'Recurring', icon: RefreshCw },

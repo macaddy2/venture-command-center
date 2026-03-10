@@ -6,9 +6,9 @@
 // ============================================================
 
 import React, { createContext, useContext, useReducer, useEffect, useCallback, type ReactNode } from 'react';
-import type { Venture, Task, Milestone, TeamRole, Registration, GitHubStats, AIInsight, VentureWithStats, FilterState, ViewKey, HealthSnapshot, RecurringTask, FinancialRecord, VentureDocument, Risk, ResourceSharing, EquityRecord, ScheduleBlock } from './types';
+import type { Venture, Task, Milestone, TeamRole, Registration, GitHubStats, AIInsight, VentureWithStats, FilterState, ViewKey, HealthSnapshot, RecurringTask, FinancialRecord, VentureDocument, Risk, ResourceSharing, EquityRecord, ScheduleBlock, ImplementationPlan, PlanPhase } from './types';
 import { computeTaskSummary, computeTeamSummary, computeRegistrationSummary, computeHealthScore } from './utils';
-import { seedVentures, seedTasks, seedMilestones, seedTeamRoles, seedRegistrations, seedGitHubStats, seedFinancials, seedDocuments, seedRisks, seedRecurringTasks, seedResourceSharing, seedHealthSnapshots, seedEquity, seedScheduleBlocks } from './seed-data';
+import { seedVentures, seedTasks, seedMilestones, seedTeamRoles, seedRegistrations, seedGitHubStats, seedFinancials, seedDocuments, seedRisks, seedRecurringTasks, seedResourceSharing, seedHealthSnapshots, seedEquity, seedScheduleBlocks, seedImplementationPlans } from './seed-data';
 import { generateId } from './utils';
 
 // --- State Shape ---
@@ -28,6 +28,7 @@ interface AppState {
     resourceSharing: ResourceSharing[];
     equity: EquityRecord[];
     scheduleBlocks: ScheduleBlock[];
+    implementationPlans: ImplementationPlan[];
     filters: FilterState;
     selectedVentureId: string | null;
     activeView: ViewKey;
@@ -91,7 +92,14 @@ type Action =
     | { type: 'SET_SCHEDULE_BLOCKS'; payload: ScheduleBlock[] }
     | { type: 'ADD_SCHEDULE_BLOCK'; payload: ScheduleBlock }
     | { type: 'UPDATE_SCHEDULE_BLOCK'; payload: ScheduleBlock }
-    | { type: 'DELETE_SCHEDULE_BLOCK'; payload: string };
+    | { type: 'DELETE_SCHEDULE_BLOCK'; payload: string }
+    | { type: 'SET_PLANS'; payload: ImplementationPlan[] }
+    | { type: 'ADD_PLAN'; payload: ImplementationPlan }
+    | { type: 'UPDATE_PLAN'; payload: ImplementationPlan }
+    | { type: 'DELETE_PLAN'; payload: string }
+    | { type: 'ADD_PLAN_PHASE'; payload: { planId: string; phase: PlanPhase } }
+    | { type: 'UPDATE_PLAN_PHASE'; payload: { planId: string; phase: PlanPhase } }
+    | { type: 'DELETE_PLAN_PHASE'; payload: { planId: string; phaseId: string } };
 
 const STORAGE_KEY = 'vcc-state';
 
@@ -121,6 +129,7 @@ function saveToStorage(state: AppState) {
             resourceSharing: state.resourceSharing,
             equity: state.equity,
             scheduleBlocks: state.scheduleBlocks,
+            implementationPlans: state.implementationPlans,
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
     } catch { /* ignore */ }
@@ -146,6 +155,7 @@ function getInitialState(): AppState {
         resourceSharing: saved?.resourceSharing?.length ? saved.resourceSharing : seedResourceSharing,
         equity: saved?.equity?.length ? saved.equity : seedEquity,
         scheduleBlocks: saved?.scheduleBlocks?.length ? saved.scheduleBlocks : seedScheduleBlocks,
+        implementationPlans: saved?.implementationPlans?.length ? saved.implementationPlans : seedImplementationPlans,
         filters: defaultFilters,
         selectedVentureId: null,
         activeView: 'dashboard',
@@ -211,6 +221,14 @@ function reducer(state: AppState, action: Action): AppState {
         case 'ADD_SCHEDULE_BLOCK': return { ...state, scheduleBlocks: [...state.scheduleBlocks, action.payload] };
         case 'UPDATE_SCHEDULE_BLOCK': return { ...state, scheduleBlocks: state.scheduleBlocks.map(b => b.id === action.payload.id ? action.payload : b) };
         case 'DELETE_SCHEDULE_BLOCK': return { ...state, scheduleBlocks: state.scheduleBlocks.filter(b => b.id !== action.payload) };
+        // Implementation Plans
+        case 'SET_PLANS': return { ...state, implementationPlans: action.payload };
+        case 'ADD_PLAN': return { ...state, implementationPlans: [...state.implementationPlans, action.payload] };
+        case 'UPDATE_PLAN': return { ...state, implementationPlans: state.implementationPlans.map(p => p.id === action.payload.id ? action.payload : p) };
+        case 'DELETE_PLAN': return { ...state, implementationPlans: state.implementationPlans.filter(p => p.id !== action.payload) };
+        case 'ADD_PLAN_PHASE': return { ...state, implementationPlans: state.implementationPlans.map(p => p.id === action.payload.planId ? { ...p, phases: [...p.phases, action.payload.phase], updated_at: new Date().toISOString() } : p) };
+        case 'UPDATE_PLAN_PHASE': return { ...state, implementationPlans: state.implementationPlans.map(p => p.id === action.payload.planId ? { ...p, phases: p.phases.map(ph => ph.id === action.payload.phase.id ? action.payload.phase : ph), updated_at: new Date().toISOString() } : p) };
+        case 'DELETE_PLAN_PHASE': return { ...state, implementationPlans: state.implementationPlans.map(p => p.id === action.payload.planId ? { ...p, phases: p.phases.filter(ph => ph.id !== action.payload.phaseId), updated_at: new Date().toISOString() } : p) };
         default: return state;
     }
 }
@@ -278,6 +296,12 @@ interface StoreContext {
     addHealthSnapshot: (snapshot: Omit<HealthSnapshot, 'id' | 'recorded_at'>) => void;
     addEquity: (record: Omit<EquityRecord, 'id'>) => void;
     addScheduleBlock: (block: Omit<ScheduleBlock, 'id'>) => void;
+    addPlan: (plan: Omit<ImplementationPlan, 'id' | 'created_at' | 'updated_at'>) => void;
+    updatePlan: (plan: ImplementationPlan) => void;
+    deletePlan: (id: string) => void;
+    addPhase: (planId: string, phase: Omit<PlanPhase, 'id' | 'created_at' | 'updated_at'>) => void;
+    updatePhase: (planId: string, phase: PlanPhase) => void;
+    deletePhase: (planId: string, phaseId: string) => void;
 }
 
 const DataContext = createContext<StoreContext | null>(null);
@@ -289,7 +313,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         saveToStorage(state);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally listing data properties, not the full state object
-    }, [state.ventures, state.tasks, state.milestones, state.teamRoles, state.registrations, state.githubStats, state.aiInsights, state.healthSnapshots, state.recurringTasks, state.financials, state.documents, state.risks, state.resourceSharing, state.equity, state.scheduleBlocks]);
+    }, [state.ventures, state.tasks, state.milestones, state.teamRoles, state.registrations, state.githubStats, state.aiInsights, state.healthSnapshots, state.recurringTasks, state.financials, state.documents, state.risks, state.resourceSharing, state.equity, state.scheduleBlocks, state.implementationPlans]);
 
     // Computed values
     const venturesWithStats = state.ventures.map(v => getVentureWithStats(state, v));
@@ -396,6 +420,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'ADD_SCHEDULE_BLOCK', payload: { ...block, id: generateId() } as ScheduleBlock });
     }, []);
 
+    const addPlan = useCallback((plan: Omit<ImplementationPlan, 'id' | 'created_at' | 'updated_at'>) => {
+        dispatch({ type: 'ADD_PLAN', payload: { ...plan, id: generateId(), created_at: now(), updated_at: now() } as ImplementationPlan });
+    }, []);
+
+    const updatePlan = useCallback((plan: ImplementationPlan) => {
+        dispatch({ type: 'UPDATE_PLAN', payload: { ...plan, updated_at: now() } });
+    }, []);
+
+    const deletePlan = useCallback((id: string) => {
+        dispatch({ type: 'DELETE_PLAN', payload: id });
+    }, []);
+
+    const addPhase = useCallback((planId: string, phase: Omit<PlanPhase, 'id' | 'created_at' | 'updated_at'>) => {
+        dispatch({ type: 'ADD_PLAN_PHASE', payload: { planId, phase: { ...phase, id: generateId(), created_at: now(), updated_at: now() } as PlanPhase } });
+    }, []);
+
+    const updatePhase = useCallback((planId: string, phase: PlanPhase) => {
+        dispatch({ type: 'UPDATE_PLAN_PHASE', payload: { planId, phase: { ...phase, updated_at: now() } } });
+    }, []);
+
+    const deletePhase = useCallback((planId: string, phaseId: string) => {
+        dispatch({ type: 'DELETE_PLAN_PHASE', payload: { planId, phaseId } });
+    }, []);
+
     const value: StoreContext = {
         state, dispatch,
         venturesWithStats, selectedVenture, filteredVentures, portfolioStats,
@@ -405,6 +453,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         addInsight,
         addRecurringTask, addFinancial, addDocument, addRisk, addResourceSharing, addHealthSnapshot,
         addEquity, addScheduleBlock,
+        addPlan, updatePlan, deletePlan, addPhase, updatePhase, deletePhase,
     };
 
     return React.createElement(DataContext.Provider, { value }, children);

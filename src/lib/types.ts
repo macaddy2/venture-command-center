@@ -10,6 +10,26 @@ export type TaskPriority = 'P0' | 'P1' | 'P2' | 'P3';
 export type RoleStatus = 'filled' | 'hiring' | 'later' | 'open';
 export type InsightType = 'summary' | 'alert' | 'suggestion' | 'health';
 export type InsightSeverity = 'info' | 'warning' | 'critical';
+export type SlackNotifyEvent = 'task_done' | 'task_blocked' | 'milestone_update' | 'health_change';
+export type PlanPhaseStatus = 'not_started' | 'in_progress' | 'completed' | 'blocked';
+
+// --- Integration Types ---
+export interface GitHubRepoRef {
+    owner: string;
+    repo: string;
+    url?: string;
+}
+
+export interface SlackConfig {
+    webhook_url: string;
+    channel_name?: string;
+    notify_on: SlackNotifyEvent[];
+}
+
+export interface VentureIntegrations {
+    github?: GitHubRepoRef[];
+    slack?: SlackConfig;
+}
 
 // --- Core Entities ---
 export interface Venture {
@@ -23,6 +43,7 @@ export interface Venture {
     color: string;
     lightColor: string;
     description?: string;
+    integrations?: VentureIntegrations;
     config?: Record<string, unknown>;
     created_at: string;
     updated_at: string;
@@ -37,6 +58,7 @@ export interface Task {
     priority: TaskPriority;
     parent_id?: string | null;
     milestone_id?: string | null;
+    plan_phase_id?: string | null;
     blocked_by?: string | null;
     due_date?: string | null;
     tags?: string[];
@@ -271,11 +293,35 @@ export interface ScheduleBlock {
     notes?: string;
 }
 
+// Implementation Plan Tracker
+export interface PlanPhase {
+    id: string;
+    plan_id: string;
+    name: string;
+    description?: string;
+    status: PlanPhaseStatus;
+    order: number;
+    target_start?: string;
+    target_end?: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ImplementationPlan {
+    id: string;
+    venture_id: string;
+    name: string;
+    description?: string;
+    phases: PlanPhase[];
+    created_at: string;
+    updated_at: string;
+}
+
 // --- UI State Types ---
 export type ViewKey = 'dashboard' | 'tasks' | 'analytics' | 'ai' | 'settings'
     | 'timeline' | 'focus' | 'financials' | 'documents' | 'risks' | 'comparisons'
     | 'digest' | 'recurring' | 'resources' | 'alerts' | 'standup'
-    | 'equity' | 'schedule';
+    | 'equity' | 'schedule' | 'plans';
 
 export interface FilterState {
     tier: VentureTier | 'all';
