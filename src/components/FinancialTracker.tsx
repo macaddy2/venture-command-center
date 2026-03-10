@@ -4,6 +4,7 @@
 
 import { useState, useMemo } from 'react';
 import { useStore } from '../lib/store';
+import { useToast } from './Toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { FinancialRecord, FinancialType } from '../lib/types';
 import {
@@ -22,6 +23,7 @@ const currencySymbol: Record<string, string> = { GBP: '£', NGN: '₦', USD: '$'
 
 export default function FinancialTracker() {
     const { state, addFinancial, dispatch } = useStore();
+    const { showToast } = useToast();
     const [showForm, setShowForm] = useState(false);
     const [ventureFilter, setVentureFilter] = useState<string>('all');
     const [form, setForm] = useState<Partial<FinancialRecord>>({
@@ -59,6 +61,7 @@ export default function FinancialTracker() {
         addFinancial(form as Omit<FinancialRecord, 'id'>);
         setShowForm(false);
         setForm({ type: 'expense', currency: 'GBP', venture_id: '' });
+        showToast('Financial record saved', 'success');
     };
 
     const formatAmount = (amount: number, currency: string = 'GBP') =>

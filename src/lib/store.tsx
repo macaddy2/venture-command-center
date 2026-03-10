@@ -6,9 +6,9 @@
 // ============================================================
 
 import React, { createContext, useContext, useReducer, useEffect, useCallback, type ReactNode } from 'react';
-import type { Venture, Task, Milestone, TeamRole, Registration, GitHubStats, AIInsight, VentureWithStats, FilterState, ViewKey, HealthSnapshot, RecurringTask, FinancialRecord, VentureDocument, Risk, ResourceSharing } from './types';
+import type { Venture, Task, Milestone, TeamRole, Registration, GitHubStats, AIInsight, VentureWithStats, FilterState, ViewKey, HealthSnapshot, RecurringTask, FinancialRecord, VentureDocument, Risk, ResourceSharing, EquityRecord, ScheduleBlock } from './types';
 import { computeTaskSummary, computeTeamSummary, computeRegistrationSummary, computeHealthScore } from './utils';
-import { seedVentures, seedTasks, seedMilestones, seedTeamRoles, seedRegistrations, seedGitHubStats, seedFinancials, seedDocuments, seedRisks, seedRecurringTasks, seedResourceSharing, seedHealthSnapshots } from './seed-data';
+import { seedVentures, seedTasks, seedMilestones, seedTeamRoles, seedRegistrations, seedGitHubStats, seedFinancials, seedDocuments, seedRisks, seedRecurringTasks, seedResourceSharing, seedHealthSnapshots, seedEquity, seedScheduleBlocks } from './seed-data';
 import { generateId } from './utils';
 
 // --- State Shape ---
@@ -26,6 +26,8 @@ interface AppState {
     documents: VentureDocument[];
     risks: Risk[];
     resourceSharing: ResourceSharing[];
+    equity: EquityRecord[];
+    scheduleBlocks: ScheduleBlock[];
     filters: FilterState;
     selectedVentureId: string | null;
     activeView: ViewKey;
@@ -81,7 +83,15 @@ type Action =
     | { type: 'DELETE_RISK'; payload: string }
     | { type: 'SET_RESOURCE_SHARING'; payload: ResourceSharing[] }
     | { type: 'ADD_RESOURCE_SHARING'; payload: ResourceSharing }
-    | { type: 'DELETE_RESOURCE_SHARING'; payload: string };
+    | { type: 'DELETE_RESOURCE_SHARING'; payload: string }
+    | { type: 'SET_EQUITY'; payload: EquityRecord[] }
+    | { type: 'ADD_EQUITY'; payload: EquityRecord }
+    | { type: 'UPDATE_EQUITY'; payload: EquityRecord }
+    | { type: 'DELETE_EQUITY'; payload: string }
+    | { type: 'SET_SCHEDULE_BLOCKS'; payload: ScheduleBlock[] }
+    | { type: 'ADD_SCHEDULE_BLOCK'; payload: ScheduleBlock }
+    | { type: 'UPDATE_SCHEDULE_BLOCK'; payload: ScheduleBlock }
+    | { type: 'DELETE_SCHEDULE_BLOCK'; payload: string };
 
 const STORAGE_KEY = 'vcc-state';
 
@@ -109,6 +119,8 @@ function saveToStorage(state: AppState) {
             documents: state.documents,
             risks: state.risks,
             resourceSharing: state.resourceSharing,
+            equity: state.equity,
+            scheduleBlocks: state.scheduleBlocks,
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
     } catch { /* ignore */ }
@@ -132,6 +144,8 @@ function getInitialState(): AppState {
         documents: saved?.documents?.length ? saved.documents : seedDocuments,
         risks: saved?.risks?.length ? saved.risks : seedRisks,
         resourceSharing: saved?.resourceSharing?.length ? saved.resourceSharing : seedResourceSharing,
+        equity: saved?.equity?.length ? saved.equity : seedEquity,
+        scheduleBlocks: saved?.scheduleBlocks?.length ? saved.scheduleBlocks : seedScheduleBlocks,
         filters: defaultFilters,
         selectedVentureId: null,
         activeView: 'dashboard',
@@ -189,6 +203,14 @@ function reducer(state: AppState, action: Action): AppState {
         case 'SET_RESOURCE_SHARING': return { ...state, resourceSharing: action.payload };
         case 'ADD_RESOURCE_SHARING': return { ...state, resourceSharing: [...state.resourceSharing, action.payload] };
         case 'DELETE_RESOURCE_SHARING': return { ...state, resourceSharing: state.resourceSharing.filter(r => r.id !== action.payload) };
+        case 'SET_EQUITY': return { ...state, equity: action.payload };
+        case 'ADD_EQUITY': return { ...state, equity: [...state.equity, action.payload] };
+        case 'UPDATE_EQUITY': return { ...state, equity: state.equity.map(e => e.id === action.payload.id ? action.payload : e) };
+        case 'DELETE_EQUITY': return { ...state, equity: state.equity.filter(e => e.id !== action.payload) };
+        case 'SET_SCHEDULE_BLOCKS': return { ...state, scheduleBlocks: action.payload };
+        case 'ADD_SCHEDULE_BLOCK': return { ...state, scheduleBlocks: [...state.scheduleBlocks, action.payload] };
+        case 'UPDATE_SCHEDULE_BLOCK': return { ...state, scheduleBlocks: state.scheduleBlocks.map(b => b.id === action.payload.id ? action.payload : b) };
+        case 'DELETE_SCHEDULE_BLOCK': return { ...state, scheduleBlocks: state.scheduleBlocks.filter(b => b.id !== action.payload) };
         default: return state;
     }
 }
@@ -254,6 +276,8 @@ interface StoreContext {
     addRisk: (risk: Omit<Risk, 'id' | 'created_at'>) => void;
     addResourceSharing: (sharing: Omit<ResourceSharing, 'id' | 'created_at'>) => void;
     addHealthSnapshot: (snapshot: Omit<HealthSnapshot, 'id' | 'recorded_at'>) => void;
+    addEquity: (record: Omit<EquityRecord, 'id'>) => void;
+    addScheduleBlock: (block: Omit<ScheduleBlock, 'id'>) => void;
 }
 
 const DataContext = createContext<StoreContext | null>(null);
@@ -265,7 +289,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         saveToStorage(state);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally listing data properties, not the full state object
-    }, [state.ventures, state.tasks, state.milestones, state.teamRoles, state.registrations, state.githubStats, state.aiInsights, state.healthSnapshots, state.recurringTasks, state.financials, state.documents, state.risks, state.resourceSharing]);
+    }, [state.ventures, state.tasks, state.milestones, state.teamRoles, state.registrations, state.githubStats, state.aiInsights, state.healthSnapshots, state.recurringTasks, state.financials, state.documents, state.risks, state.resourceSharing, state.equity, state.scheduleBlocks]);
 
     // Computed values
     const venturesWithStats = state.ventures.map(v => getVentureWithStats(state, v));
@@ -364,6 +388,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'ADD_HEALTH_SNAPSHOT', payload: { ...snapshot, id: generateId(), recorded_at: now() } as HealthSnapshot });
     }, []);
 
+    const addEquity = useCallback((record: Omit<EquityRecord, 'id'>) => {
+        dispatch({ type: 'ADD_EQUITY', payload: { ...record, id: generateId() } as EquityRecord });
+    }, []);
+
+    const addScheduleBlock = useCallback((block: Omit<ScheduleBlock, 'id'>) => {
+        dispatch({ type: 'ADD_SCHEDULE_BLOCK', payload: { ...block, id: generateId() } as ScheduleBlock });
+    }, []);
+
     const value: StoreContext = {
         state, dispatch,
         venturesWithStats, selectedVenture, filteredVentures, portfolioStats,
@@ -372,6 +404,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         addMilestone, updateMilestone,
         addInsight,
         addRecurringTask, addFinancial, addDocument, addRisk, addResourceSharing, addHealthSnapshot,
+        addEquity, addScheduleBlock,
     };
 
     return React.createElement(DataContext.Provider, { value }, children);

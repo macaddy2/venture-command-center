@@ -245,10 +245,37 @@ export interface ResourceSharing {
     created_at: string;
 }
 
+// Equity / Cap Table (new feature)
+export type EquityRole = 'Founder' | 'Investor' | 'Advisor' | 'Employee' | 'ESOP Pool';
+export interface EquityRecord {
+    id: string;
+    venture_id: string;
+    stakeholder: string;
+    role: EquityRole;
+    percentage: number;
+    shares?: number;
+    investment_amount?: number;
+    currency?: 'GBP' | 'NGN' | 'USD';
+    date: string;
+    notes?: string;
+}
+
+// Schedule Planner (new feature)
+export type TimeSlot = 'AM' | 'PM' | 'Eve';
+export interface ScheduleBlock {
+    id: string;
+    date: string; // YYYY-MM-DD
+    time_slot: TimeSlot;
+    venture_id: string | null;
+    title: string;
+    notes?: string;
+}
+
 // --- UI State Types ---
 export type ViewKey = 'dashboard' | 'tasks' | 'analytics' | 'ai' | 'settings'
     | 'timeline' | 'focus' | 'financials' | 'documents' | 'risks' | 'comparisons'
-    | 'digest' | 'recurring' | 'resources' | 'alerts' | 'standup';
+    | 'digest' | 'recurring' | 'resources' | 'alerts' | 'standup'
+    | 'equity' | 'schedule';
 
 export interface FilterState {
     tier: VentureTier | 'all';

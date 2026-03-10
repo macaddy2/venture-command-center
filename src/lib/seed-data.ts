@@ -2,7 +2,7 @@
 // Seed Data — Initial venture portfolio (from prototype)
 // ============================================================
 
-import type { Venture, Task, Milestone, TeamRole, Registration, GitHubStats } from './types';
+import type { Venture, Task, Milestone, TeamRole, Registration, GitHubStats, EquityRecord, ScheduleBlock, FinancialRecord, VentureDocument, Risk, RecurringTask, ResourceSharing, HealthSnapshot } from './types';
 import { generateId } from './utils';
 
 // --- Venture IDs (stable for references) ---
@@ -17,6 +17,7 @@ const IDS = {
     vd: 'v-vestden-008',
     pp: 'v-paypaddy-009',
     fs: 'v-fashop-010',
+    fl: 'v-fixars-lab-011',
 };
 
 export const seedVentures: Venture[] = [
@@ -30,6 +31,7 @@ export const seedVentures: Venture[] = [
     { id: IDS.vd, name: 'VestDen', prefix: 'VD', geo: 'NG', tier: 'Parked', color: '#E67E22', lightColor: '#FDEBD0', status: 'Planning', stage: 'Under Fixars', description: 'Investment and portfolio tracking (Fixars sub-app)', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-02-16T00:00:00Z' },
     { id: IDS.pp, name: 'PayPaddy', prefix: 'PP', geo: 'NG', tier: 'Parked', color: '#E67E22', lightColor: '#FDEBD0', status: 'Planning', stage: 'Under Fixars', description: 'Payment and fintech layer (Fixars sub-app)', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-02-16T00:00:00Z' },
     { id: IDS.fs, name: 'FaShop', prefix: 'FS', geo: 'NG', tier: 'Parked', color: '#E67E22', lightColor: '#FDEBD0', status: 'Concept', stage: 'Under Fixars', description: 'E-commerce and shopping hub (Fixars sub-app)', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-02-16T00:00:00Z' },
+    { id: IDS.fl, name: 'Fixars Laboratories', prefix: 'FL', geo: 'NG', tier: 'Incubating', color: '#1ABC9C', lightColor: '#1ABC9C20', status: 'Active', stage: 'R&D Phase', description: 'R&D and infrastructure arm for the Fixars ecosystem — prototyping AI features, testing new sub-app concepts, and building shared tooling for all ventures.', created_at: '2026-01-15T00:00:00Z', updated_at: '2026-03-01T00:00:00Z' },
 ];
 
 // --- Sample tasks (subset to demonstrate the engine) ---
@@ -102,6 +104,14 @@ export const seedTasks: Task[] = [
     { id: generateId(), venture_id: IDS.fx, title: 'Design auth/identity layer', status: 'in-progress', priority: 'P0', created_at: '2026-02-05T00:00:00Z', updated_at: '2026-02-16T00:00:00Z' },
     { id: generateId(), venture_id: IDS.fx, title: 'Supabase integration setup', status: 'in-progress', priority: 'P1', created_at: '2026-01-21T00:00:00Z', updated_at: '2026-02-16T00:00:00Z' },
     { id: generateId(), venture_id: IDS.fx, title: 'Finalize CAC documents', status: 'blocked', priority: 'P0', created_at: '2026-01-15T00:00:00Z', updated_at: '2026-02-10T00:00:00Z' },
+    // Fixars Laboratories tasks
+    { id: generateId(), venture_id: IDS.fl, title: 'Set up shared component library (monorepo)', status: 'in-progress', priority: 'P0', created_at: '2026-01-20T00:00:00Z', updated_at: '2026-03-01T00:00:00Z' },
+    { id: generateId(), venture_id: IDS.fl, title: 'Prototype AI-powered search for SkillsCanvas', status: 'in-progress', priority: 'P1', created_at: '2026-02-01T00:00:00Z', updated_at: '2026-03-01T00:00:00Z' },
+    { id: generateId(), venture_id: IDS.fl, title: 'Design cross-app authentication layer', status: 'todo', priority: 'P0', created_at: '2026-02-10T00:00:00Z', updated_at: '2026-02-10T00:00:00Z' },
+    { id: generateId(), venture_id: IDS.fl, title: 'Build API gateway for sub-apps', status: 'todo', priority: 'P1', created_at: '2026-02-10T00:00:00Z', updated_at: '2026-02-10T00:00:00Z' },
+    { id: generateId(), venture_id: IDS.fl, title: 'Research LLM integration patterns', status: 'done', priority: 'P1', created_at: '2026-01-15T00:00:00Z', updated_at: '2026-02-20T00:00:00Z' },
+    { id: generateId(), venture_id: IDS.fl, title: 'Create design system tokens', status: 'backlog', priority: 'P2', created_at: '2026-02-15T00:00:00Z', updated_at: '2026-02-15T00:00:00Z' },
+
     ...Array.from({ length: 22 }, (_, i) => ({
         id: generateId(),
         venture_id: IDS.fx,
@@ -133,6 +143,8 @@ export const seedMilestones: Milestone[] = [
     { id: generateId(), venture_id: IDS.fx, name: 'CAC Registration', target_date: '2026-03-31', progress: 15, created_at: '2025-10-01T00:00:00Z', updated_at: '2026-02-16T00:00:00Z' },
     { id: generateId(), venture_id: IDS.fx, name: 'Auth/Identity Layer', target_date: '2026-06-30', progress: 5, created_at: '2025-10-01T00:00:00Z', updated_at: '2026-02-16T00:00:00Z' },
     { id: generateId(), venture_id: IDS.fx, name: 'First Sub-App Live', target_date: '2026-09-30', progress: 0, created_at: '2025-10-01T00:00:00Z', updated_at: '2026-02-16T00:00:00Z' },
+    { id: generateId(), venture_id: IDS.fl, name: 'Shared Component Library v1', target_date: '2026-05-31', progress: 20, created_at: '2026-01-15T00:00:00Z', updated_at: '2026-03-01T00:00:00Z' },
+    { id: generateId(), venture_id: IDS.fl, name: 'AI Prototype Demo', target_date: '2026-07-31', progress: 10, created_at: '2026-01-15T00:00:00Z', updated_at: '2026-03-01T00:00:00Z' },
 ];
 
 export const seedTeamRoles: TeamRole[] = [
@@ -160,6 +172,10 @@ export const seedTeamRoles: TeamRole[] = [
     { id: generateId(), venture_id: IDS.fx, role_name: 'Community Lead', status: 'hiring', assignee_name: null },
     { id: generateId(), venture_id: IDS.fx, role_name: 'Biz Ops', status: 'hiring', assignee_name: null },
     { id: generateId(), venture_id: IDS.fx, role_name: 'Mobile Developer', status: 'hiring', assignee_name: null },
+    // Fixars Laboratories
+    { id: generateId(), venture_id: IDS.fl, role_name: 'Lead R&D Engineer', status: 'hiring', assignee_name: null },
+    { id: generateId(), venture_id: IDS.fl, role_name: 'AI/ML Specialist', status: 'hiring', assignee_name: null },
+    { id: generateId(), venture_id: IDS.fl, role_name: 'Founder / Director', status: 'filled', assignee_name: 'Ade' },
 ];
 
 export const seedRegistrations: Registration[] = [
@@ -183,6 +199,11 @@ export const seedRegistrations: Registration[] = [
     { id: generateId(), venture_id: IDS.fx, type: 'company', completed: false, notes: 'CAC filing in progress' },
     { id: generateId(), venture_id: IDS.fx, type: 'bank', completed: false },
     { id: generateId(), venture_id: IDS.fx, type: 'legal', completed: false },
+    // Fixars Laboratories
+    { id: generateId(), venture_id: IDS.fl, type: 'domain', completed: true, notes: 'fixarslabs.io' },
+    { id: generateId(), venture_id: IDS.fl, type: 'company', completed: false },
+    { id: generateId(), venture_id: IDS.fl, type: 'bank', completed: false },
+    { id: generateId(), venture_id: IDS.fl, type: 'legal', completed: false },
     // Sub-apps (domain only)
     ...['cn', 'sc', 'cb', 'vd', 'pp', 'fs'].flatMap(key => [
         { id: generateId(), venture_id: IDS[key as keyof typeof IDS], type: 'domain' as const, completed: true },
@@ -200,8 +221,6 @@ export const seedGitHubStats: GitHubStats[] = [
 ];
 
 // --- Seed data for new features ---
-import type { FinancialRecord, VentureDocument, Risk, RecurringTask, ResourceSharing, HealthSnapshot } from './types';
-
 export const seedFinancials: FinancialRecord[] = [
     { id: generateId(), venture_id: IDS.tc, type: 'expense', amount: 120, currency: 'GBP', label: 'Domain & hosting', date: '2026-01-10' },
     { id: generateId(), venture_id: IDS.tc, type: 'expense', amount: 49, currency: 'GBP', label: 'Vercel Pro plan', date: '2026-02-01' },
@@ -254,5 +273,34 @@ export const seedHealthSnapshots: HealthSnapshot[] = [
     { id: generateId(), venture_id: IDS.fx, score: 28, recorded_at: '2026-01-15T00:00:00Z' },
     { id: generateId(), venture_id: IDS.fx, score: 33, recorded_at: '2026-02-01T00:00:00Z' },
     { id: generateId(), venture_id: IDS.fx, score: 35, recorded_at: '2026-02-16T00:00:00Z' },
+];
+
+export const seedEquity: EquityRecord[] = [
+    // TruCycle cap table
+    { id: generateId(), venture_id: IDS.tc, stakeholder: 'Ade (Founder)', role: 'Founder', percentage: 80, shares: 800000, date: '2025-11-01', notes: 'Founding equity' },
+    { id: generateId(), venture_id: IDS.tc, stakeholder: 'ESOP Pool', role: 'ESOP Pool', percentage: 10, shares: 100000, date: '2025-11-01', notes: 'Reserved for future team' },
+    { id: generateId(), venture_id: IDS.tc, stakeholder: 'Angel Investor (TBC)', role: 'Investor', percentage: 10, shares: 100000, investment_amount: 25000, currency: 'GBP', date: '2026-03-01', notes: 'Pre-seed round — in discussion' },
+    // DepositGuard cap table
+    { id: generateId(), venture_id: IDS.dg, stakeholder: 'Ade (Founder)', role: 'Founder', percentage: 90, shares: 900000, date: '2025-12-01', notes: 'Founding equity' },
+    { id: generateId(), venture_id: IDS.dg, stakeholder: 'ESOP Pool', role: 'ESOP Pool', percentage: 10, shares: 100000, date: '2025-12-01', notes: 'Reserved for hires' },
+    // Fixars cap table
+    { id: generateId(), venture_id: IDS.fx, stakeholder: 'Ade (Founder)', role: 'Founder', percentage: 75, date: '2025-10-01' },
+    { id: generateId(), venture_id: IDS.fx, stakeholder: 'Co-Founder (TBC)', role: 'Founder', percentage: 15, date: '2025-10-01', notes: 'Reserved for technical co-founder' },
+    { id: generateId(), venture_id: IDS.fx, stakeholder: 'ESOP Pool', role: 'ESOP Pool', percentage: 10, date: '2025-10-01' },
+];
+
+// Generate dates for the current week (week of 2026-03-09)
+export const seedScheduleBlocks: ScheduleBlock[] = [
+    { id: generateId(), date: '2026-03-09', time_slot: 'AM', venture_id: IDS.tc, title: 'Seller dashboard sprint review' },
+    { id: generateId(), date: '2026-03-09', time_slot: 'PM', venture_id: IDS.dg, title: 'DepositFlow prototype session' },
+    { id: generateId(), date: '2026-03-10', time_slot: 'AM', venture_id: IDS.fx, title: 'CAC registration follow-up' },
+    { id: generateId(), date: '2026-03-10', time_slot: 'PM', venture_id: IDS.tc, title: 'Review & rating system build' },
+    { id: generateId(), date: '2026-03-10', time_slot: 'Eve', venture_id: IDS.fl, title: 'AI prototype research' },
+    { id: generateId(), date: '2026-03-11', time_slot: 'AM', venture_id: IDS.dg, title: 'Legal model review with solicitor' },
+    { id: generateId(), date: '2026-03-11', time_slot: 'PM', venture_id: IDS.pm, title: 'Competitive analysis writeup' },
+    { id: generateId(), date: '2026-03-12', time_slot: 'AM', venture_id: IDS.tc, title: 'CTO candidate interviews' },
+    { id: generateId(), date: '2026-03-12', time_slot: 'PM', venture_id: IDS.fx, title: 'Architecture design session' },
+    { id: generateId(), date: '2026-03-13', time_slot: 'AM', venture_id: IDS.fl, title: 'Shared component library sprint' },
+    { id: generateId(), date: '2026-03-13', time_slot: 'PM', venture_id: IDS.dg, title: 'Backend implementation' },
 ];
 
