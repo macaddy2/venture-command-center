@@ -7,16 +7,50 @@ import VentureCard from './VentureCard';
 import DetailPanel from './DetailPanel';
 import {
     Briefcase, CheckCircle2, AlertTriangle, Users,
-    FileCheck, Activity
+    FileCheck, Activity, Target, Sun, Coffee, Moon,
+    UserPlus, ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatDate, priorityConfig } from '../lib/utils';
+
+function getGreeting(): string {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+}
+
+function getGreetingIcon() {
+    const h = new Date().getHours();
+    if (h < 12) return <Sun size={16} color="#F59E0B" />;
+    if (h < 17) return <Coffee size={16} color="#E67E22" />;
+    return <Moon size={16} color="#8B5CF6" />;
+}
 
 export default function Dashboard() {
     const {
-        state, dispatch, filteredVentures, selectedVenture, portfolioStats
+        state, dispatch, filteredVentures, selectedVenture, portfolioStats, venturesWithStats
     } = useStore();
 
     const { filters } = state;
+
+    // Daily Focus: top 3 P0/P1 tasks that are todo or in-progress
+    const priorityOrder: Record<string, number> = { P0: 0, P1: 1, P2: 2, P3: 3 };
+    const focusTasks = state.tasks
+        .filter(t => ['todo', 'in-progress'].includes(t.status) && ['P0', 'P1'].includes(t.priority))
+        .sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
+        .slice(0, 3);
+
+    // Critical hires: all hiring roles grouped by venture, Active Build + Incubating first
+    const hiringRoles = state.teamRoles
+        .filter(r => r.status === 'hiring')
+        .map(r => ({ ...r, venture: venturesWithStats.find(v => v.id === r.venture_id) }))
+        .filter(r => r.venture && r.venture.tier !== 'Parked')
+        .sort((a, b) => {
+            const tierOrder: Record<string, number> = { 'Active Build': 0, 'Incubating': 1, 'Parked': 2 };
+            return (tierOrder[a.venture?.tier ?? 'Parked'] ?? 2) - (tierOrder[b.venture?.tier ?? 'Parked'] ?? 2);
+        })
+        .slice(0, 6);
 
     const stats = [
         {
@@ -91,6 +125,108 @@ export default function Dashboard() {
                     </motion.div>
                 ))}
             </div>
+
+            {/* Daily Focus + Critical Hires */}
+            <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 'var(--space-4)', marginBottom: 'var(--space-5)' }}
+            >
+                {/* Daily Focus */}
+                <div style={{
+                    background: 'var(--color-bg-card)',
+                    border: '1px solid var(--color-border)',
+                    borderLeft: '3px solid var(--color-accent-primary)',
+                    borderRadius: 'var(--border-radius-md)',
+                    padding: 'var(--space-4)',
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            {getGreetingIcon()}
+                            <span style={{ fontWeight: 600, fontSize: 'var(--font-size-sm)' }}>
+                                {getGreeting()} · {formatDate(new Date().toISOString())}
+                            </span>
+                        </div>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                            {([
+                                { label: 'Standup', view: 'standup' as const },
+                                { label: 'Digest', view: 'digest' as const },
+                                { label: 'Focus', view: 'focus' as const },
+                            ]).map(a => (
+                                <button
+                                    key={a.label}
+                                    className="btn btn-sm"
+                                    onClick={() => dispatch({ type: 'SET_ACTIVE_VIEW', payload: a.view })}
+                                    style={{ fontSize: '11px', padding: '3px 8px' }}
+                                >
+                                    {a.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    {focusTasks.length === 0 ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-success)', fontSize: 'var(--font-size-sm)' }}>
+                            <CheckCircle2 size={14} />
+                            <span>No urgent tasks — great shape today!</span>
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {focusTasks.map(task => {
+                                const v = state.ventures.find(v => v.id === task.venture_id);
+                                const pc = priorityConfig[task.priority];
+                                return (
+                                    <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--font-size-sm)' }}>
+                                        <Target size={12} style={{ flexShrink: 0 }} color="var(--color-accent-primary)" />
+                                        <span style={{
+                                            padding: '1px 6px',
+                                            borderRadius: 'var(--border-radius-sm)',
+                                            fontSize: '10px',
+                                            fontWeight: 700,
+                                            background: pc.color + '22',
+                                            color: pc.color,
+                                        }}>{task.priority}</span>
+                                        <span style={{ flex: 1, color: 'var(--color-text-primary)' }}>{task.title}</span>
+                                        {v && (
+                                            <span style={{ fontSize: '10px', color: v.color, fontWeight: 600, flexShrink: 0 }}>{v.prefix}</span>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                {/* Critical Hires */}
+                <div style={{
+                    background: 'var(--color-bg-card)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--border-radius-md)',
+                    padding: 'var(--space-4)',
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <UserPlus size={14} color="var(--color-warning)" />
+                            <span style={{ fontWeight: 600, fontSize: 'var(--font-size-sm)' }}>Critical Hires</span>
+                        </div>
+                        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                            {state.teamRoles.filter(r => r.status === 'hiring').length} open
+                        </span>
+                    </div>
+                    {hiringRoles.length === 0 ? (
+                        <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', margin: 0 }}>No active hiring</p>
+                    ) : (
+                        hiringRoles.map(r => r.venture && (
+                            <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5, fontSize: 'var(--font-size-xs)' }}>
+                                <span style={{ width: 6, height: 6, borderRadius: '50%', background: r.venture.color, flexShrink: 0 }} />
+                                <span style={{ color: 'var(--color-text-secondary)', flexShrink: 0 }}>{r.venture.prefix}</span>
+                                <span style={{ flex: 1, color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.role_name}</span>
+                                <ArrowRight size={10} color="var(--color-text-muted)" />
+                            </div>
+                        ))
+                    )}
+                </div>
+            </motion.div>
 
             {/* Filters */}
             <div className="filter-bar">

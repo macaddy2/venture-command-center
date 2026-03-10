@@ -4,6 +4,7 @@
 
 import { useState, useMemo } from 'react';
 import { useStore } from '../lib/store';
+import { useToast } from './Toast';
 import { motion } from 'framer-motion';
 import {
     FileText, Copy, Download, Calendar, Check,
@@ -14,6 +15,7 @@ type ReportPeriod = 'daily' | 'weekly';
 
 export default function StandupGenerator() {
     const { state, venturesWithStats } = useStore();
+    const { showToast } = useToast();
     const [period, setPeriod] = useState<ReportPeriod>('weekly');
     const [selectedVentures, setSelectedVentures] = useState<string[]>(
         state.ventures.filter(v => v.tier === 'Active Build' || v.tier === 'Incubating').map(v => v.id)
@@ -143,6 +145,7 @@ export default function StandupGenerator() {
         await navigator.clipboard.writeText(report);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
+        showToast('Standup report copied to clipboard', 'info');
     };
 
     const handleDownload = () => {

@@ -8,7 +8,8 @@ import {
     LayoutDashboard, ListTodo, BarChart3, Bot, Settings,
     ChevronLeft, ChevronRight, Zap, Calendar, Target,
     DollarSign, FileText, ShieldAlert, GitCompare,
-    Mail, RefreshCw, Share2, AlertCircle, ClipboardList
+    Mail, RefreshCw, Share2, AlertCircle, ClipboardList,
+    PieChart, CalendarRange
 } from 'lucide-react';
 
 const navItems: { key: ViewKey; label: string; icon: typeof LayoutDashboard }[] = [
@@ -19,6 +20,8 @@ const navItems: { key: ViewKey; label: string; icon: typeof LayoutDashboard }[] 
     { key: 'analytics', label: 'Analytics', icon: BarChart3 },
     { key: 'comparisons', label: 'Compare', icon: GitCompare },
     { key: 'financials', label: 'Financials', icon: DollarSign },
+    { key: 'equity', label: 'Equity', icon: PieChart },
+    { key: 'schedule', label: 'Schedule', icon: CalendarRange },
     { key: 'documents', label: 'Documents', icon: FileText },
     { key: 'risks', label: 'Risks', icon: ShieldAlert },
     { key: 'recurring', label: 'Recurring', icon: RefreshCw },

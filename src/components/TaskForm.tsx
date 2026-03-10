@@ -4,6 +4,7 @@
 
 import { useState } from 'react';
 import { useStore } from '../lib/store';
+import { useToast } from './Toast';
 import type { Task, TaskStatus, TaskPriority } from '../lib/types';
 import { X } from 'lucide-react';
 
@@ -15,6 +16,7 @@ interface Props {
 
 export default function TaskForm({ task, ventureId, onClose }: Props) {
     const { state, addTask, updateTask } = useStore();
+    const { showToast } = useToast();
     const isEdit = !!task;
 
     const [title, setTitle] = useState(task?.title || '');
@@ -51,6 +53,8 @@ export default function TaskForm({ task, ventureId, onClose }: Props) {
                 blocked_by: null,
                 tags: [],
             });
+            const v = state.ventures.find(v => v.id === selectedVenture);
+            showToast(`Task added${v ? ` to ${v.name}` : ''}`, 'success');
         }
 
         onClose();

@@ -315,15 +315,75 @@ function generateAIResponse(query: string, store: ReturnType<typeof useStore>): 
         return `👥 **Open Hiring Positions (${openRoles.length}):**\n\n${lines.join('\n')}\n\n📌 I'd prioritize the **CTO for TruCycle** and **Lead Developer for DepositGuard** — these are blocking active development.`;
     }
 
-    if (q.includes('risk') || q.includes('danger')) {
+    if (q.includes('risk') || q.includes('danger') || q.includes('risk rundown')) {
         const active = state.risks.filter(r => r.status === 'active');
         if (active.length === 0) return '✅ No active risks in your portfolio. Consider doing a risk review to surface any hidden concerns.';
-        const lines = active.map(r => {
+        const sorted = [...active].sort((a, b) => (b.likelihood * b.impact) - (a.likelihood * a.impact));
+        const lines = sorted.map(r => {
             const v = state.ventures.find(v => v.id === r.venture_id);
-            const color = r.likelihood >= 3 && r.impact >= 4 ? '🔴' : '🟡';
-            return `• ${color} **${v?.name}**: ${r.title} (L${r.likelihood}×I${r.impact})`;
+            const score = r.likelihood * r.impact;
+            const color = score >= 16 ? '🔴' : score >= 9 ? '🟡' : '🟢';
+            return `• ${color} **${v?.name}**: ${r.title} (L${r.likelihood}×I${r.impact} = ${score})\n  → ${r.mitigation ?? 'No mitigation defined'}`;
         });
-        return `⚠️ **Active Risks (${active.length}):**\n\n${lines.join('\n')}\n\nSay \`go to risks\` to open the Risk Matrix.`;
+        return `⚠️ **Active Risks — sorted by severity (${active.length} total):**\n\n${lines.join('\n\n')}\n\nSay \`go to risks\` to open the Risk Matrix.`;
+    }
+
+    if (q.includes('critical hire') || q.includes('who do we need') || q.includes('hiring priorities')) {
+        const hiringRoles = state.teamRoles.filter(r => r.status === 'hiring');
+        if (hiringRoles.length === 0) return '✅ No open hiring positions right now.';
+        const byVenture: Record<string, string[]> = {};
+        hiringRoles.forEach(r => {
+            const v = state.ventures.find(v => v.id === r.venture_id);
+            if (!v) return;
+            if (!byVenture[v.name]) byVenture[v.name] = [];
+            byVenture[v.name].push(r.role_name);
+        });
+        const lines = Object.entries(byVenture).map(([name, roles]) => `• **${name}**: ${roles.join(', ')}`);
+        return `👥 **Critical Hires (${hiringRoles.length} open positions):**\n\n${lines.join('\n')}\n\n🔑 **Top 3 priorities:**\n1. CTO for TruCycle (blocking MVP development)\n2. Lead Developer for DepositGuard (blocking platform build)\n3. CTO/Architect for Fixars (needed before sub-app expansion)\n\nSay \`go to tasks\` to manage hiring tasks.`;
+    }
+
+    if (q.includes('deadline') || q.includes('upcoming') || q.includes('milestone') || q.includes('due soon')) {
+        const now = new Date();
+        const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        const upcoming = state.milestones
+            .filter(m => {
+                const d = new Date(m.target_date);
+                return d >= now && d <= in30Days;
+            })
+            .sort((a, b) => new Date(a.target_date).getTime() - new Date(b.target_date).getTime());
+        if (upcoming.length === 0) {
+            const next3 = [...state.milestones]
+                .filter(m => new Date(m.target_date) >= now)
+                .sort((a, b) => new Date(a.target_date).getTime() - new Date(b.target_date).getTime())
+                .slice(0, 3);
+            if (next3.length === 0) return '📅 No upcoming milestones found.';
+            const lines = next3.map(m => {
+                const v = state.ventures.find(v => v.id === m.venture_id);
+                return `• **${v?.name}**: ${m.name} — ${m.target_date} (${m.progress}% done)`;
+            });
+            return `📅 **No milestones due in the next 30 days.** Next upcoming:\n\n${lines.join('\n')}`;
+        }
+        const lines = upcoming.map(m => {
+            const v = state.ventures.find(v => v.id === m.venture_id);
+            const daysLeft = Math.ceil((new Date(m.target_date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+            const urgency = daysLeft <= 7 ? '🔴' : daysLeft <= 14 ? '🟡' : '🟢';
+            return `• ${urgency} **${v?.name}**: ${m.name} — ${m.target_date} (${daysLeft}d, ${m.progress}% done)`;
+        });
+        return `📅 **Milestones due in next 30 days (${upcoming.length}):**\n\n${lines.join('\n')}\n\nSay \`go to timeline\` to see the full Gantt view.`;
+    }
+
+    if (q.includes('runway') || q.includes('burn') || q.includes('financial') || q.includes('budget')) {
+        const revenue = state.financials.filter(f => f.type === 'revenue').reduce((s, f) => s + (f.currency === 'GBP' ? f.amount : f.currency === 'USD' ? f.amount * 0.79 : f.amount / 1800), 0);
+        const expenses = state.financials.filter(f => f.type === 'expense').reduce((s, f) => s + (f.currency === 'GBP' ? f.amount : f.currency === 'USD' ? f.amount * 0.79 : f.amount / 1800), 0);
+        const net = revenue - expenses;
+        const byVenture: Record<string, number> = {};
+        state.financials.filter(f => f.type === 'expense').forEach(f => {
+            const v = state.ventures.find(v => v.id === f.venture_id);
+            if (!v) return;
+            byVenture[v.name] = (byVenture[v.name] ?? 0) + (f.currency === 'GBP' ? f.amount : f.amount / 1800);
+        });
+        const expBreakdown = Object.entries(byVenture).sort((a, b) => b[1] - a[1]).map(([name, amt]) => `• ${name}: ~£${Math.round(amt)}`);
+        return `💷 **Financial Snapshot (GBP equivalent):**\n\n• Total Revenue: £${Math.round(revenue).toLocaleString()}\n• Total Expenses: £${Math.round(expenses).toLocaleString()}\n• Net Position: ${net >= 0 ? '✅' : '⚠️'} £${Math.round(Math.abs(net)).toLocaleString()} ${net >= 0 ? 'surplus' : 'deficit'}\n\n**Spending by venture:**\n${expBreakdown.join('\n')}\n\nSay \`go to financials\` to see detailed records.`;
     }
 
     return `I understand your question about "${query}". Here's what I can help with:\n\n**Commands** (type \`help\` for full list):\n• \`go to [view]\` — Navigate views\n• \`add task "title" to [venture]\` — Create tasks\n• \`mark "task" as done\` — Complete tasks\n• \`unblock "task"\` — Move blocked → todo\n\n**Questions:**\n• "What's blocking?" · "Portfolio summary"\n• "Health scores" · "TruCycle status"\n• "Suggest actions" · "Team status"\n\nIn production, I'll connect to your OpenAI API key for more intelligent analysis.`;
@@ -400,13 +460,17 @@ export default function AICopilot() {
         }
     };
 
-    // Quick action buttons
+    // Quick action buttons — 2 rows
     const quickActions = [
         { label: 'Summary', query: 'Give me a portfolio summary', icon: TrendingUp },
         { label: 'Blocked?', query: 'What\'s blocking my ventures?', icon: AlertTriangle },
         { label: 'Suggest', query: 'Suggest next actions', icon: Lightbulb },
         { label: 'Health', query: 'Show health scores', icon: Sparkles },
         { label: 'Commands', query: 'help', icon: Terminal },
+        { label: 'Hires?', query: 'Who are the critical hires right now?', icon: Command },
+        { label: 'Deadlines?', query: 'What milestones are upcoming in 30 days?', icon: Zap },
+        { label: 'Runway?', query: 'What is our financial runway and burn rate?', icon: TrendingUp },
+        { label: 'Risk Rundown', query: 'Give me a risk rundown across all ventures', icon: AlertTriangle },
     ];
 
     // Generate insights

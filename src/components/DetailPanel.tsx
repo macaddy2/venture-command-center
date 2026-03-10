@@ -6,16 +6,22 @@ import type { VentureWithStats } from '../lib/types';
 import { useStore } from '../lib/store';
 import {
     X, CheckCircle2, AlertTriangle, Clock, Target,
-    Users, GitBranch, FileText
+    Users, GitBranch, FileText, Globe, Building2, CreditCard, Scale, Check
 } from 'lucide-react';
+import EditableField from './EditableField';
 
 interface Props {
     venture: VentureWithStats;
     onClose: () => void;
 }
 
+const STAGE_OPTIONS = [
+    'Concept', 'Research & Validation', 'Pre-Registration', 'Registration & Architecture',
+    'MVP Development', 'R&D Phase', 'Beta', 'Live', 'Growth', 'Under Fixars',
+].map(s => ({ label: s, value: s }));
+
 export default function DetailPanel({ venture: v, onClose }: Props) {
-    const { state } = useStore();
+    const { state, updateVenture } = useStore();
     const progress = v.tasks.total > 0 ? Math.round((v.tasks.done / v.tasks.total) * 100) : 0;
 
     const healthColor = v.healthScore >= 60 ? 'var(--color-success)'
@@ -40,10 +46,21 @@ export default function DetailPanel({ venture: v, onClose }: Props) {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-                        {v.name}
+                        <EditableField
+                            value={v.name}
+                            onSave={name => updateVenture({ ...v, name })}
+                            displayStyle={{ fontSize: 'var(--font-size-xl)', fontWeight: 700 }}
+                        />
                     </div>
-                    <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>
-                        {v.geo === 'UK' ? '🇬🇧' : '🇳🇬'} {v.geo} · {v.tier} · {v.status}
+                    <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {v.geo === 'UK' ? '🇬🇧' : '🇳🇬'} {v.geo} · {v.tier} ·{' '}
+                        <EditableField
+                            value={v.stage}
+                            onSave={stage => updateVenture({ ...v, stage })}
+                            type="select"
+                            options={STAGE_OPTIONS}
+                            displayStyle={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}
+                        />
                     </div>
                 </div>
                 <div style={{
@@ -61,14 +78,15 @@ export default function DetailPanel({ venture: v, onClose }: Props) {
             {/* Body */}
             <div className="detail-panel-body">
                 {/* Description */}
-                {v.description && (
-                    <p style={{
-                        fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)',
-                        marginBottom: 'var(--space-4)', lineHeight: 1.6,
-                    }}>
-                        {v.description}
-                    </p>
-                )}
+                <div style={{ marginBottom: 'var(--space-4)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+                    <EditableField
+                        value={v.description ?? ''}
+                        onSave={description => updateVenture({ ...v, description })}
+                        type="textarea"
+                        placeholder="Add a description..."
+                        displayStyle={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}
+                    />
+                </div>
 
                 {/* Task Progress */}
                 <div className="detail-panel-section">
@@ -112,24 +130,46 @@ export default function DetailPanel({ venture: v, onClose }: Props) {
                     </div>
                 </div>
 
-                {/* Registration Checklist */}
+                {/* Registration Chain */}
                 <div className="detail-panel-section">
                     <div className="detail-section-title">
                         <FileText size={14} />
-                        Registration Checklist
+                        Registration Progress
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)' }}>
-                        {[
-                            { label: 'Domain', done: v.regs.domain },
-                            { label: 'Company Reg', done: v.regs.company },
-                            { label: 'Bank Account', done: v.regs.bank },
-                            { label: 'Legal Docs', done: v.regs.legal },
-                        ].map(r => (
-                            <div key={r.label} className="reg-item">
-                                <span className={`reg-dot ${r.done ? 'done' : 'pending'}`} />
-                                <span style={{ color: r.done ? 'var(--color-success)' : 'var(--color-text-muted)' }}>
-                                    {r.label}
-                                </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+                        {([
+                            { label: 'Domain', done: v.regs.domain, icon: Globe },
+                            { label: 'Company', done: v.regs.company, icon: Building2 },
+                            { label: 'Bank', done: v.regs.bank, icon: CreditCard },
+                            { label: 'Legal', done: v.regs.legal, icon: Scale },
+                        ] as { label: string; done: boolean; icon: typeof Globe }[]).map((step, i, arr) => (
+                            <div key={step.label} style={{ display: 'flex', alignItems: 'center', flex: i < arr.length - 1 ? 1 : 'none' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                                    <div style={{
+                                        width: 32, height: 32, borderRadius: '50%',
+                                        border: `2px solid ${step.done ? 'var(--color-success)' : 'var(--color-border)'}`,
+                                        background: step.done ? 'var(--color-success-bg)' : 'var(--color-bg-tertiary)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        flexShrink: 0,
+                                    }}>
+                                        {step.done
+                                            ? <Check size={14} color="var(--color-success)" />
+                                            : <step.icon size={13} color="var(--color-text-muted)" />
+                                        }
+                                    </div>
+                                    <span style={{
+                                        fontSize: '10px', fontWeight: step.done ? 600 : 400,
+                                        color: step.done ? 'var(--color-success)' : 'var(--color-text-muted)',
+                                        whiteSpace: 'nowrap',
+                                    }}>{step.label}</span>
+                                </div>
+                                {i < arr.length - 1 && (
+                                    <div style={{
+                                        flex: 1, height: 2, marginBottom: 18,
+                                        background: step.done ? 'var(--color-success)' : 'var(--color-border)',
+                                        transition: 'background var(--transition-base)',
+                                    }} />
+                                )}
                             </div>
                         ))}
                     </div>

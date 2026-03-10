@@ -23,6 +23,8 @@ import RecurringTasks from './components/RecurringTasks';
 import ResourceSharingView from './components/ResourceSharing';
 import PredictiveAlerts from './components/PredictiveAlerts';
 import StandupGenerator from './components/StandupGenerator';
+import EquityTracker from './components/EquityTracker';
+import SchedulePlanner from './components/SchedulePlanner';
 import { Loader } from 'lucide-react';
 
 function AppContent() {
@@ -46,6 +48,8 @@ function AppContent() {
             case 'resources': return <ResourceSharingView />;
             case 'alerts': return <PredictiveAlerts />;
             case 'standup': return <StandupGenerator />;
+            case 'equity': return <EquityTracker />;
+            case 'schedule': return <SchedulePlanner />;
             default: return <Dashboard />;
         }
     };
