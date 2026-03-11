@@ -320,7 +320,7 @@ export default function EquityTracker() {
                             </div>
                             <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end', marginTop: 'var(--space-2)' }}>
                                 <button className="btn" onClick={() => setShowForm(false)}>Cancel</button>
-                                <button className="btn btn-primary" onClick={handleSubmit}>Add Stakeholder</button>
+                                <button className="btn btn-primary" onClick={handleSubmit} disabled={!form.venture_id || !form.stakeholder || !form.percentage} style={{ opacity: (!form.venture_id || !form.stakeholder || !form.percentage) ? 0.5 : 1 }}>Add Stakeholder</button>
                             </div>
                         </div>
                     </motion.div>
