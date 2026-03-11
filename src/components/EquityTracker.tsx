@@ -8,6 +8,7 @@ import { generateId } from '../lib/utils';
 
 const ROLE_COLORS: Record<EquityRole, string> = {
     'Founder': '#6366F1',
+    'Cofounder': '#818CF8',
     'Investor': '#10B981',
     'Advisor': '#F59E0B',
     'Employee': '#3B82F6',
@@ -275,7 +276,7 @@ export default function EquityTracker() {
                                 <div>
                                     <label style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', display: 'block', marginBottom: 4 }}>Role *</label>
                                     <select className="form-select" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value as EquityRole }))}>
-                                        {(['Founder', 'Investor', 'Advisor', 'Employee', 'ESOP Pool'] as EquityRole[]).map(r => <option key={r} value={r}>{r}</option>)}
+                                        {(['Founder', 'Cofounder', 'Investor', 'Advisor', 'Employee', 'ESOP Pool'] as EquityRole[]).map(r => <option key={r} value={r}>{r}</option>)}
                                     </select>
                                 </div>
                             </div>
