@@ -268,7 +268,7 @@ export interface ResourceSharing {
 }
 
 // Equity / Cap Table (new feature)
-export type EquityRole = 'Founder' | 'Investor' | 'Advisor' | 'Employee' | 'ESOP Pool';
+export type EquityRole = 'Founder' | 'Cofounder' | 'Investor' | 'Advisor' | 'Employee' | 'ESOP Pool';
 export interface EquityRecord {
     id: string;
     venture_id: string;
