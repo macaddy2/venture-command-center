@@ -4,6 +4,7 @@
 
 import { DataProvider, useStore } from './lib/store';
 import { useAuth } from './lib/useAuth';
+import { isSupabaseConfigured } from './lib/supabase';
 import AuthPage from './components/AuthPage';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -74,7 +75,16 @@ function AppContent() {
 function App() {
     const { user, isLoading } = useAuth();
 
-    // Show loader while checking auth state
+    // Local-first mode: when Supabase isn't configured, skip auth entirely
+    // so the app remains usable offline (per project's local-first promise).
+    if (!isSupabaseConfigured) {
+        return (
+            <DataProvider>
+                <AppContent />
+            </DataProvider>
+        );
+    }
+
     if (isLoading) {
         return (
             <div className="auth-loading">
@@ -84,12 +94,10 @@ function App() {
         );
     }
 
-    // Not authenticated → show login page
     if (!user) {
         return <AuthPage />;
     }
 
-    // Authenticated → show app
     return (
         <DataProvider>
             <AppContent />
